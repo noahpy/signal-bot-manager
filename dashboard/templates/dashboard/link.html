@@ -1,0 +1,34 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Link Account — Signal Bot{% endblock %}
+
+{% block content %}
+<h2>Signal Account</h2>
+
+{% if account and account.linked %}
+<article>
+    <header>Linked Account</header>
+    <p><strong>Phone:</strong> {{ account.phone_number }}</p>
+    <p><strong>Linked at:</strong> {{ account.linked_at|date:"Y-m-d H:i" }}</p>
+</article>
+{% endif %}
+
+<article>
+    <header>Link New Device</header>
+    <p>This will generate a QR code. Scan it with Signal on your phone (Settings &rarr; Linked Devices &rarr; Link New Device).</p>
+    <form method="post" action="{% url 'dashboard:link_start' %}">
+        {% csrf_token %}
+        <label>
+            Device Name
+            <input type="text" name="device_name" value="signal-bot">
+        </label>
+        <button type="submit" {% if state.active %}disabled{% endif %}>
+            {% if state.active %}Linking in progress...{% else %}Start Linking{% endif %}
+        </button>
+    </form>
+
+    <div hx-get="{% url 'dashboard:link_status' %}" hx-trigger="every 2s" hx-swap="innerHTML" id="link-status">
+        {% include "dashboard/partials/link_status.html" %}
+    </div>
+</article>
+{% endblock %}

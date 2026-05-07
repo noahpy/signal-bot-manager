@@ -1,0 +1,59 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}{{ title }} — Signal Bot{% endblock %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+
+<form method="post">
+    {% csrf_token %}
+
+    <fieldset>
+        <legend>Job Settings</legend>
+        {% for field in form %}
+        <label>
+            {{ field.label }}
+            {{ field }}
+            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
+        </label>
+        {% endfor %}
+    </fieldset>
+
+    <fieldset>
+        <legend>Triggers</legend>
+        {{ formset.management_form }}
+        {% for tf in formset %}
+        <article>
+            {% if tf.instance.pk %}<input type="hidden" name="{{ tf.prefix }}-id" value="{{ tf.instance.pk }}">{% endif %}
+            <div class="grid">
+                <label>
+                    Type
+                    {{ tf.trigger_type }}
+                </label>
+                <label>
+                    Cron Expression
+                    {{ tf.cron_expression }}
+                </label>
+                <label>
+                    Message Pattern (regex)
+                    {{ tf.pattern }}
+                </label>
+            </div>
+            <label>
+                Listen Chats (for message triggers)
+                {{ tf.listen_chats }}
+            </label>
+            {% if tf.instance.pk %}
+            <label>
+                {{ tf.DELETE }} Delete this trigger
+            </label>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </fieldset>
+
+    <button type="submit">Save</button>
+    <a href="{% url 'dashboard:index' %}" role="button" class="outline secondary">Cancel</a>
+</form>
+{% endblock %}

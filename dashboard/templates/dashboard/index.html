@@ -1,0 +1,89 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Dashboard — Signal Bot{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h2>Dashboard</h2>
+    <p>
+        {% if account and account.linked %}
+            Linked: {{ account.phone_number }}
+        {% else %}
+            <a href="{% url 'dashboard:link_account' %}">No account linked</a>
+        {% endif %}
+    </p>
+</hgroup>
+
+<div class="grid">
+    <article>
+        <header>Jobs</header>
+        <p><strong>{{ jobs|length }}</strong> configured</p>
+        <a href="{% url 'dashboard:job_create' %}" role="button" class="outline">+ New Job</a>
+    </article>
+</div>
+
+<h3>Jobs</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Triggers</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in jobs %}
+        <tr>
+            <td><a href="{% url 'dashboard:job_detail' job.pk %}">{{ job.name }}</a></td>
+            <td>{{ job.get_job_type_display }}</td>
+            <td>{{ job.triggers.count }}</td>
+            <td>
+                {% if job.enabled %}
+                    <span class="badge badge-success">Enabled</span>
+                {% else %}
+                    <span class="badge badge-muted">Disabled</span>
+                {% endif %}
+            </td>
+            <td class="actions">
+                <form method="post" action="{% url 'dashboard:job_toggle' job.pk %}" hx-post="{% url 'dashboard:job_toggle' job.pk %}" hx-target="closest tr" hx-swap="outerHTML">
+                    {% csrf_token %}
+                    <button class="outline secondary" type="submit">Toggle</button>
+                </form>
+                <form method="post" action="{% url 'dashboard:job_run' job.pk %}" hx-post="{% url 'dashboard:job_run' job.pk %}" hx-swap="none">
+                    {% csrf_token %}
+                    <button class="outline" type="submit">Run</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No jobs yet. <a href="{% url 'dashboard:job_create' %}">Create one</a>.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if recent_executions %}
+<h3>Recent Executions</h3>
+<table>
+    <thead>
+        <tr><th>Job</th><th>Status</th><th>Started</th><th>Duration</th></tr>
+    </thead>
+    <tbody>
+        {% for ex in recent_executions %}
+        <tr>
+            <td><a href="{% url 'dashboard:job_detail' ex.job.pk %}">{{ ex.job.name }}</a></td>
+            <td>
+                {% if ex.status == "success" %}<span class="badge badge-success">{{ ex.status }}</span>
+                {% elif ex.status == "failed" %}<span class="badge badge-danger">{{ ex.status }}</span>
+                {% elif ex.status == "running" %}<span class="badge badge-warning">{{ ex.status }}</span>
+                {% else %}<span class="badge badge-muted">{{ ex.status }}</span>{% endif %}
+            </td>
+            <td>{{ ex.started_at|date:"Y-m-d H:i" }}</td>
+            <td>{% if ex.duration_ms is not None %}{{ ex.duration_ms }}ms{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

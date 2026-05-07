@@ -1,0 +1,16 @@
+<table id="chat-table">
+    <thead>
+        <tr><th>Name</th><th>Type</th><th>Identifier</th></tr>
+    </thead>
+    <tbody>
+        {% for chat in chats %}
+        <tr>
+            <td>{{ chat.name|default:"(unnamed)" }}</td>
+            <td>{{ chat.get_chat_type_display }}</td>
+            <td><code>{{ chat.identifier }}</code></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">No chats synced yet. Click "Sync from Signal" to fetch contacts and groups.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

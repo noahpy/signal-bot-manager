@@ -1,0 +1,18 @@
+{% if state.success %}
+<article>
+    <p><strong>Account linked successfully!</strong></p>
+    <a href="{% url 'dashboard:link_account' %}">Refresh</a>
+</article>
+{% elif state.error %}
+<article>
+    <p><strong>Linking failed:</strong> {{ state.error }}</p>
+</article>
+{% elif qr_data_uri %}
+<article>
+    <p>Scan this QR code with Signal:</p>
+    <img src="{{ qr_data_uri }}" alt="QR Code" style="max-width: 300px;">
+    <p><small>Waiting for you to scan...</small></p>
+</article>
+{% elif state.active %}
+<p aria-busy="true">Generating QR code...</p>
+{% endif %}

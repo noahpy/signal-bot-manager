@@ -1,0 +1,35 @@
+<table>
+    <thead>
+        <tr><th>Status</th><th>Started</th><th>Duration</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+        {% for ex in executions %}
+        <tr>
+            <td>
+                {% if ex.status == "success" %}<span class="badge badge-success">{{ ex.status }}</span>
+                {% elif ex.status == "failed" %}<span class="badge badge-danger">{{ ex.status }}</span>
+                {% elif ex.status == "running" %}<span class="badge badge-warning">{{ ex.status }}</span>
+                {% else %}<span class="badge badge-muted">{{ ex.status }}</span>{% endif %}
+            </td>
+            <td>{{ ex.started_at|date:"Y-m-d H:i:s" }}</td>
+            <td>{% if ex.duration_ms is not None %}{{ ex.duration_ms }}ms{% else %}—{% endif %}</td>
+            <td>
+                {% if ex.error_message %}
+                <details>
+                    <summary>Error</summary>
+                    <pre class="log">{{ ex.error_message }}</pre>
+                </details>
+                {% endif %}
+                {% if ex.log_output %}
+                <details>
+                    <summary>Log</summary>
+                    <pre class="log">{{ ex.log_output }}</pre>
+                </details>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">No executions yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

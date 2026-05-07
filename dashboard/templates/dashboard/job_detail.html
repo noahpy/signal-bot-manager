@@ -1,0 +1,91 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}{{ job.name }} — Signal Bot{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h2>{{ job.name }}</h2>
+    <p>{{ job.get_job_type_display }} job
+        {% if job.enabled %}<span class="badge badge-success">Enabled</span>
+        {% else %}<span class="badge badge-muted">Disabled</span>{% endif %}
+    </p>
+</hgroup>
+
+{% if job.description %}
+<p>{{ job.description }}</p>
+{% endif %}
+
+<div class="actions" style="margin-bottom: 1rem;">
+    <a href="{% url 'dashboard:job_edit' job.pk %}" role="button" class="outline">Edit</a>
+    <form method="post" action="{% url 'dashboard:job_toggle' job.pk %}">
+        {% csrf_token %}
+        <button class="outline secondary" type="submit">{% if job.enabled %}Disable{% else %}Enable{% endif %}</button>
+    </form>
+    <form method="post" action="{% url 'dashboard:job_run' job.pk %}">
+        {% csrf_token %}
+        <button type="submit">Run Now</button>
+    </form>
+    <a href="{% url 'dashboard:job_delete' job.pk %}" role="button" class="outline secondary">Delete</a>
+</div>
+
+<details open>
+    <summary>Configuration</summary>
+    <table>
+        {% if job.job_type == "script" %}
+        <tr><td><strong>Script</strong></td><td>{{ job.script_path }}</td></tr>
+        {% endif %}
+        {% if job.job_type == "simple" %}
+        <tr><td><strong>Message</strong></td><td><pre>{{ job.message_template }}</pre></td></tr>
+        {% endif %}
+        <tr>
+            <td><strong>Target Chats</strong></td>
+            <td>
+                {% for chat in job.target_chats.all %}
+                    {{ chat }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    (none)
+                {% endfor %}
+            </td>
+        </tr>
+        {% if job.config_json %}
+        <tr><td><strong>Config</strong></td><td><pre>{{ job.config_json }}</pre></td></tr>
+        {% endif %}
+    </table>
+</details>
+
+<details open>
+    <summary>Triggers</summary>
+    <table>
+        <thead><tr><th>Type</th><th>Details</th><th>Status</th></tr></thead>
+        <tbody>
+            {% for trigger in job.triggers.all %}
+            <tr>
+                <td>{{ trigger.get_trigger_type_display }}</td>
+                <td>
+                    {% if trigger.trigger_type == "cron" %}
+                        <code>{{ trigger.cron_expression }}</code>
+                    {% elif trigger.trigger_type == "message" %}
+                        Pattern: <code>{{ trigger.pattern }}</code>
+                    {% elif trigger.trigger_type == "webhook" %}
+                        Token: <code>{{ trigger.webhook_token }}</code>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if trigger.enabled %}<span class="badge badge-success">Active</span>
+                    {% else %}<span class="badge badge-muted">Disabled</span>{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No triggers configured.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</details>
+
+<details open>
+    <summary>Execution Log</summary>
+    <div hx-get="{% url 'dashboard:job_logs_partial' job.pk %}" hx-trigger="every 5s" hx-swap="innerHTML">
+        {% include "dashboard/partials/job_logs.html" %}
+    </div>
+</details>
+{% endblock %}

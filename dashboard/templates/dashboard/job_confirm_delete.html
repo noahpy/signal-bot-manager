@@ -1,0 +1,13 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Delete {{ job.name }} — Signal Bot{% endblock %}
+
+{% block content %}
+<h2>Delete "{{ job.name }}"?</h2>
+<p>This will also delete all triggers and execution logs for this job.</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="contrast">Delete</button>
+    <a href="{% url 'dashboard:job_detail' job.pk %}" role="button" class="outline secondary">Cancel</a>
+</form>
+{% endblock %}

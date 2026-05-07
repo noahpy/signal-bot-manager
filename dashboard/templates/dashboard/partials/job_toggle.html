@@ -1,0 +1,24 @@
+<tr>
+    <td><a href="{% url 'dashboard:job_detail' job.pk %}">{{ job.name }}</a></td>
+    <td>{{ job.get_job_type_display }}</td>
+    <td>{{ job.triggers.count }}</td>
+    <td>{{ job.target_chats.count }}</td>
+    <td>
+        {% if job.enabled %}
+            <span class="badge badge-success">Enabled</span>
+        {% else %}
+            <span class="badge badge-muted">Disabled</span>
+        {% endif %}
+    </td>
+    <td class="actions">
+        <a href="{% url 'dashboard:job_edit' job.pk %}" role="button" class="outline secondary">Edit</a>
+        <form method="post" action="{% url 'dashboard:job_toggle' job.pk %}" hx-post="{% url 'dashboard:job_toggle' job.pk %}" hx-target="closest tr" hx-swap="outerHTML">
+            {% csrf_token %}
+            <button class="outline secondary" type="submit">Toggle</button>
+        </form>
+        <form method="post" action="{% url 'dashboard:job_run' job.pk %}" hx-post="{% url 'dashboard:job_run' job.pk %}" hx-swap="none">
+            {% csrf_token %}
+            <button class="outline" type="submit">Run</button>
+        </form>
+    </td>
+</tr>
