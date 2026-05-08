@@ -28,22 +28,31 @@ def run(ctx):
     last_decider_stats = load(NAMESPAE, LAST_DECIDER_STATS_KEY)
 
     if not last_decider_stats:
-        last_decider_stats = [(0, p['number']) for p in members]
-        last_decider_stats.sort()
+        last_decider_stats_list = [(0, p['number']) for p in members]
+    else:
+        last_decider_stats_list = list(last_decider_stats.items())
 
+    last_decider_stats_list.sort()
     next_decider_num = last_decider_stats[0][1]
     next_decider_name = get_name(next_decider_num)
 
     text, m = mention(next_decider_num)
-    msg = f"Hey, {text}! Diese Woche ist deine Woche um KKK zu bestimmen. Gib Ort / Uhrzeit vor und pinne die Nachricht! Reservieren wenn notwendig! Unten kommt noch eine Umfrage."
+
+    if next_decider_name.lower().find("fabian"):
+        msg = f"Hey, {text}! Diese Woche ist deine Woche um KKK zu bestimmen. Gebe Ort / Uhrzeit vor und pinne die Nachricht! Reservieren wenn notwendig! Unten kommt noch eine Umfrage."
+    else:
+        msg = f"Hey, {text}! Diese Woche ist deine Woche um KKK zu bestimmen. Gib Ort / Uhrzeit vor und pinne die Nachricht! Reservieren wenn notwendig! Unten kommt noch eine Umfrage."
 
     send_with_mentions(ctx.signal, chat, msg, [m(msg.index(text))])
 
     res = send_poll(ctx.signal, chat, "Wann KKK?", ["Freitag", "Samstag", "Sonntag"])
     pin_message(ctx.signal, chat, get_own_number(), res["timestamp"], 400000)
 
+    last_decider_stats[next_decider_num] += 1
 
+    store(NAMESPAE, LAST_DECIDER_STATS_KEY, last_decider_stats)
 
+    
 
 
 
