@@ -2,9 +2,8 @@ import json
 
 
 def run(ctx):
-    ctx.log.info("=== Debug Unknown Members ===")
+    ctx.log.info("=== Fetching profiles for unknown members ===")
 
-    # The 6 unnamed member UUIDs from H2F4 Tasks
     unknown_uuids = [
         "31ea81b6-5c1d-41d0-8de7-b2770910205c",
         "8313203f-6dd4-4fa4-84a1-c6b5b0b7b588",
@@ -14,70 +13,43 @@ def run(ctx):
         "f80e8633-fb0c-4fee-8eec-2debabcf698f",
     ]
 
-    # Check if these UUIDs appear in listContacts
+    # Try sendSyncRequest to pull contacts from phone
+    ctx.log.info("=== Trying sendSyncRequest ===")
+    try:
+        result = ctx.signal._call("sendSyncRequest", timeout=30)
+        ctx.log.info("  sendSyncRequest result: %s", result)
+    except Exception as e:
+        ctx.log.info("  sendSyncRequest ERROR: %s", e)
+
+    # Try updateProfile / getProfile for each UUID
+    ctx.log.info("=== Trying updateContact for each UUID ===")
+    for uuid in unknown_uuids:
+        try:
+            result = ctx.signal._call("updateContact", timeout=10, recipient=uuid)
+            ctx.log.info("  updateContact %s: %s", uuid, json.dumps(result, default=str)[:300])
+        except Exception as e:
+            ctx.log.info("  updateContact %s: %s", uuid, e)
+
+    # Try sending a typing indicator (non-invasive) to force profile fetch
+    ctx.log.info("=== Trying sendTyping to force profile fetch ===")
+    for uuid in unknown_uuids:
+        try:
+            result = ctx.signal._call("sendTyping", timeout=10, recipient=[uuid])
+            ctx.log.info("  sendTyping %s: %s", uuid, json.dumps(result, default=str)[:300])
+        except Exception as e:
+            ctx.log.info("  sendTyping %s: %s", uuid, e)
+
+    # Now re-check contacts
+    import time
+    time.sleep(3)
     contacts = ctx.signal.list_contacts()
-    ctx.log.info("Total contacts: %d", len(contacts))
-
-    uuid_to_contact = {}
-    for c in contacts:
-        u = c.get("uuid")
-        if u:
-            uuid_to_contact[u] = c
-
-    ctx.log.info("=== Checking unknown UUIDs against contacts ===")
+    uuid_to_contact = {c.get("uuid"): c for c in contacts if c.get("uuid")}
+    ctx.log.info("=== Re-checking after profile fetch ===")
     for uuid in unknown_uuids:
         if uuid in uuid_to_contact:
             c = uuid_to_contact[uuid]
             profile = c.get("profile") or {}
-            ctx.log.info("  FOUND %s in contacts:", uuid)
-            ctx.log.info("    number: %s", c.get("number"))
-            ctx.log.info("    name: %s", c.get("name"))
-            ctx.log.info("    contactName: %s", c.get("contactName"))
-            ctx.log.info("    profileName: %s", c.get("profileName"))
-            ctx.log.info("    givenName: %s", c.get("givenName"))
-            ctx.log.info("    profile.givenName: %s", profile.get("givenName"))
-            ctx.log.info("    profile.familyName: %s", profile.get("familyName"))
-            ctx.log.info("    unregistered: %s", c.get("unregistered"))
+            pname = " ".join(filter(None, [profile.get("givenName"), profile.get("familyName")])).strip()
+            ctx.log.info("  NOW FOUND %s: number=%s profile='%s' name='%s'", uuid, c.get("number"), pname, c.get("name"))
         else:
-            ctx.log.info("  NOT IN CONTACTS: %s", uuid)
-
-    # Also check: does the group itself have any extra member info?
-    groups = ctx.signal.list_groups()
-    for g in groups:
-        gid = g.get("id") or g.get("groupId")
-        if gid == "t9xo6lcGLNbVvcfiG56PCM/j1IcHLaXwEoOUPJKABU8=":
-            members = g.get("members", [])
-            ctx.log.info("=== Raw member data for unknown UUIDs ===")
-            for m in members:
-                if m.get("uuid") in unknown_uuids:
-                    ctx.log.info("  %s", json.dumps(m, default=str))
-            # Check if there are other fields on the group
-            ctx.log.info("=== Group keys: %s ===", list(g.keys()))
-            # Check pendingMembers, requestingMembers, etc.
-            for key in ["pendingMembers", "requestingMembers", "bannedMembers", "admins"]:
-                if g.get(key):
-                    ctx.log.info("  %s: %s", key, json.dumps(g[key], default=str)[:500])
-            break
-
-    # Try getUserStatus or getIdentity for these UUIDs
-    ctx.log.info("=== Trying getUserStatus for unknown UUIDs ===")
-    for uuid in unknown_uuids:
-        try:
-            result = ctx.signal._call("getUserStatus", timeout=10, recipient=[uuid])
-            ctx.log.info("  getUserStatus %s: %s", uuid, json.dumps(result, default=str)[:300])
-        except Exception as e:
-            ctx.log.info("  getUserStatus %s: ERROR %s", uuid, e)
-
-    ctx.log.info("=== Trying listIdentities ===")
-    try:
-        identities = ctx.signal._call("listIdentities", timeout=30)
-        ctx.log.info("Total identities: %d", len(identities) if isinstance(identities, list) else "not a list")
-        if isinstance(identities, list):
-            for ident in identities:
-                if ident.get("uuid") in unknown_uuids or ident.get("number") in [None]:
-                    # Check if any identity matches our unknown UUIDs
-                    for uuid in unknown_uuids:
-                        if str(ident).find(uuid) != -1:
-                            ctx.log.info("  Identity match: %s", json.dumps(ident, default=str)[:300])
-    except Exception as e:
-        ctx.log.info("  listIdentities ERROR: %s", e)
+            ctx.log.info("  STILL MISSING: %s", uuid)
