@@ -11,12 +11,22 @@
     <fieldset>
         <legend>Job Settings</legend>
         {% for field in form %}
+        {% if field.name == "target_chats" %}
+        <label>{{ field.label }}</label>
+        <div class="chat-picker">
+            <input type="search" placeholder="Search chats..." onkeyup="filterCheckboxes(this, 'target-chats')">
+            <div class="checkbox-scroll" id="target-chats">
+                {{ field }}
+            </div>
+        </div>
+        {% else %}
         <label>
             {{ field.label }}
             {{ field }}
             {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
             {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
         </label>
+        {% endif %}
         {% endfor %}
     </fieldset>
 
@@ -40,10 +50,13 @@
                     {{ tf.pattern }}
                 </label>
             </div>
-            <label>
-                Listen Chats (for message triggers)
-                {{ tf.listen_chats }}
-            </label>
+            <label>Listen Chats (for message triggers)</label>
+            <div class="chat-picker">
+                <input type="search" placeholder="Search chats..." onkeyup="filterCheckboxes(this, 'listen-chats-{{ forloop.counter0 }}')">
+                <div class="checkbox-scroll" id="listen-chats-{{ forloop.counter0 }}">
+                    {{ tf.listen_chats }}
+                </div>
+            </div>
             {% if tf.instance.pk %}
             <label>
                 {{ tf.DELETE }} Delete this trigger
@@ -56,4 +69,34 @@
     <button type="submit">Save</button>
     <a href="{% url 'dashboard:index' %}" role="button" class="outline secondary">Cancel</a>
 </form>
+
+<style>
+    .chat-picker { margin-bottom: 1rem; }
+    .chat-picker input[type="search"] { margin-bottom: 0.3rem; }
+    .checkbox-scroll {
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: 4px;
+        padding: 0.5rem;
+    }
+    .checkbox-scroll li {
+        list-style: none;
+        padding: 0.15rem 0;
+    }
+    .checkbox-scroll ul { margin: 0; padding: 0; }
+    .checkbox-scroll label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+    .checkbox-scroll label input { margin: 0; }
+</style>
+
+<script>
+function filterCheckboxes(input, containerId) {
+    var query = input.value.toLowerCase();
+    var items = document.getElementById(containerId).querySelectorAll('li');
+    items.forEach(function(li) {
+        var text = li.textContent.toLowerCase();
+        li.style.display = text.includes(query) ? '' : 'none';
+    });
+}
+</script>
 {% endblock %}

@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from core.executor import execute_job
 from core.linking import get_link_state, start_linking
 from core.models import Chat, Job, JobExecution, SignalAccount
-from core.signal_client import SignalClient, SignalClientError
+from core.signal_client import SignalClient, SignalClientError, detect_account
 from dashboard.forms import JobForm, TriggerFormSet
 
 
@@ -18,7 +18,7 @@ def index(request):
     recent_executions = JobExecution.objects.select_related("job")[:10]
     account = SignalAccount.objects.filter(linked=True).first()
     if not account:
-        SignalClient()._detect_account()
+        detect_account()
         account = SignalAccount.objects.filter(linked=True).first()
     return render(request, "dashboard/index.html", {
         "jobs": jobs,
@@ -156,6 +156,20 @@ def _sync_worker():
     from core.signal_client import SignalClient
     _sync_state["errors"] = []
     client = SignalClient()
+
+    # Add "Note to Self"
+    try:
+        acct = SignalAccount.objects.filter(linked=True).first()
+        if acct and acct.phone_number:
+            Chat.objects.update_or_create(
+                identifier=acct.phone_number,
+                defaults={
+                    "chat_type": Chat.ChatType.CONTACT,
+                    "name": "Note to Self",
+                },
+            )
+    except Exception as e:
+        _sync_state["errors"].append(f"Note to Self: {e}")
 
     try:
         contacts = client.list_contacts()

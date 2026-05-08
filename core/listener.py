@@ -1,10 +1,6 @@
-import json
 import logging
 import re
-import subprocess
 import time
-
-from django.conf import settings
 
 from core.executor import execute_job
 from core.models import SignalAccount, Trigger
@@ -16,58 +12,31 @@ def listener_loop():
     logger.info("Message listener started")
     while True:
         try:
-            _listen()
+            acct = SignalAccount.objects.filter(linked=True).first()
+            if not acct or not acct.phone_number:
+                from core.signal_client import detect_account
+                phone = detect_account()
+                if not phone:
+                    logger.info("No linked account, waiting...")
+                    time.sleep(10)
+                    continue
+
+            from core import jsonrpc
+            if not jsonrpc.is_running():
+                logger.info("Starting shared jsonRpc process for %s", acct.phone_number)
+                jsonrpc.start(acct.phone_number, on_notification=_handle_notification)
+
+            while jsonrpc.is_running():
+                time.sleep(1)
+
+            logger.warning("jsonRpc process died, restarting in 5s...")
+            time.sleep(5)
         except Exception:
             logger.exception("Listener error, restarting in 10s...")
             time.sleep(10)
 
 
-def _listen():
-    acct = SignalAccount.objects.filter(linked=True).first()
-    if not acct or not acct.phone_number:
-        logger.info("No linked account, waiting...")
-        time.sleep(10)
-        return
-
-    cmd = [
-        settings.SIGNAL_CLI_PATH,
-        "--config", str(settings.SIGNAL_CLI_CONFIG),
-        "-a", acct.phone_number,
-        "--output=json",
-        "jsonRpc",
-    ]
-    logger.info("Starting jsonRpc listener for %s", acct.phone_number)
-    proc = subprocess.Popen(
-        cmd,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-
-    try:
-        for line in proc.stdout:
-            line = line.strip()
-            if not line:
-                continue
-            _handle_line(line)
-    finally:
-        proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-
-
-def _handle_line(line):
-    try:
-        msg = json.loads(line)
-    except json.JSONDecodeError:
-        return
-
-    if msg.get("method") != "receive":
-        return
-
+def _handle_notification(msg):
     envelope = msg.get("params", {}).get("envelope", {})
     data_message = envelope.get("dataMessage")
     if not data_message or not data_message.get("message"):
