@@ -208,7 +208,7 @@ def _sync_worker():
                     identifier=gid,
                     defaults={
                         "chat_type": Chat.ChatType.GROUP,
-                        "name": g.get("name", ""),
+                        "name": g.get("name") or "",
                     },
                 )
     except Exception as e:
