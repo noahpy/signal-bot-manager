@@ -1,5 +1,6 @@
 import base64
 import io
+import threading
 
 import qrcode
 from django.http import HttpResponse
@@ -148,50 +149,65 @@ def chat_list(request):
     return render(request, "dashboard/chats.html", {"chats": chats})
 
 
-def chat_sync(request):
-    errors = []
-    if request.method == "POST":
-        client = SignalClient()
+_sync_state = {"running": False, "errors": []}
 
-        try:
-            groups = client.list_groups()
-            for g in groups:
-                gid = g.get("id") or g.get("groupId")
-                if gid:
-                    Chat.objects.update_or_create(
-                        identifier=gid,
-                        defaults={
-                            "chat_type": Chat.ChatType.GROUP,
-                            "name": g.get("name", ""),
-                        },
-                    )
-        except Exception as e:
-            errors.append(f"Groups: {e}")
 
-        try:
-            contacts = client.list_contacts()
-            for c in contacts:
-                number = c.get("number")
-                if not number:
-                    continue
-                profile = c.get("profile") or {}
-                name = (
-                    c.get("name")
-                    or c.get("contactName")
-                    or " ".join(filter(None, [profile.get("givenName"), profile.get("familyName")]))
-                    or c.get("profileName", "")
-                )
+def _sync_worker():
+    from core.signal_client import SignalClient
+    _sync_state["errors"] = []
+    client = SignalClient()
+
+    try:
+        contacts = client.list_contacts()
+        for c in contacts:
+            number = c.get("number")
+            if not number:
+                continue
+            profile = c.get("profile") or {}
+            name = (
+                c.get("name")
+                or c.get("contactName")
+                or " ".join(filter(None, [profile.get("givenName"), profile.get("familyName")]))
+                or c.get("profileName", "")
+            )
+            Chat.objects.update_or_create(
+                identifier=number,
+                defaults={
+                    "chat_type": Chat.ChatType.CONTACT,
+                    "name": name.strip(),
+                },
+            )
+    except Exception as e:
+        _sync_state["errors"].append(f"Contacts: {e}")
+
+    try:
+        groups = client.list_groups()
+        for g in groups:
+            gid = g.get("id") or g.get("groupId")
+            if gid:
                 Chat.objects.update_or_create(
-                    identifier=number,
+                    identifier=gid,
                     defaults={
-                        "chat_type": Chat.ChatType.CONTACT,
-                        "name": name.strip(),
+                        "chat_type": Chat.ChatType.GROUP,
+                        "name": g.get("name", ""),
                     },
                 )
-        except Exception as e:
-            errors.append(f"Contacts: {e}")
+    except Exception as e:
+        _sync_state["errors"].append(f"Groups: {e}")
+
+    _sync_state["running"] = False
+
+
+def chat_sync(request):
+    if request.method == "POST" and not _sync_state["running"]:
+        _sync_state["running"] = True
+        threading.Thread(target=_sync_worker, daemon=True).start()
 
     if request.headers.get("HX-Request"):
         chats = Chat.objects.all()
-        return render(request, "dashboard/partials/chat_list.html", {"chats": chats, "errors": errors})
+        return render(request, "dashboard/partials/chat_list.html", {
+            "chats": chats,
+            "syncing": _sync_state["running"],
+            "errors": _sync_state["errors"],
+        })
     return redirect("dashboard:chat_list")

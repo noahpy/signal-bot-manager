@@ -1,4 +1,14 @@
-<table id="chat-table">
+{% if syncing %}
+<p aria-busy="true" hx-get="{% url 'dashboard:chat_sync' %}" hx-trigger="every 3s" hx-target="#chat-section" hx-swap="innerHTML">Syncing contacts and groups...</p>
+{% endif %}
+
+{% if errors %}
+{% for err in errors %}
+<p><strong>Error:</strong> {{ err }}</p>
+{% endfor %}
+{% endif %}
+
+<table>
     <thead>
         <tr><th>Name</th><th>Type</th><th>Identifier</th></tr>
     </thead>
