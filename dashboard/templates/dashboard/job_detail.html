@@ -84,7 +84,7 @@
 
 <details open>
     <summary>Execution Log</summary>
-    <div hx-get="{% url 'dashboard:job_logs_partial' job.pk %}" hx-trigger="every 5s" hx-swap="innerHTML">
+    <div hx-get="{% url 'dashboard:job_logs_partial' job.pk %}" hx-trigger="every 5s" hx-swap="morph" hx-ext="morph">
         {% include "dashboard/partials/job_logs.html" %}
     </div>
 </details>
