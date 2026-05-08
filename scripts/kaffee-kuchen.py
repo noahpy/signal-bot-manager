@@ -28,12 +28,13 @@ def run(ctx):
     last_decider_stats = load(NAMESPAE, LAST_DECIDER_STATS_KEY)
 
     if not last_decider_stats:
-        last_decider_stats_list = [(0, p['number']) for p in members]
+        last_decider_stats_list = [(p['number'], 0) for p in members]
+        last_decider_stats = dict(last_decider_stats_list)
     else:
         last_decider_stats_list = list(last_decider_stats.items())
 
-    last_decider_stats_list.sort()
-    next_decider_num = last_decider_stats_list[0][1]
+    last_decider_stats_list.sort(key=lambda x: (x[1], x[0]))
+    next_decider_num = last_decider_stats_list[0][0]
     next_decider_name = get_name(next_decider_num)
 
     text, m = mention(next_decider_num)
