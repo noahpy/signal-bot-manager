@@ -76,14 +76,23 @@ def _match_contact(name, contacts, log=None):
     return best
 
 
+def _is_phone(identifier):
+    return identifier.startswith("+")
+
+
 def _build_mention_message(contacts_to_mention, prefix):
     texts_and_builders = []
+    plain_names = []
     for c in contacts_to_mention:
         display = c.name or c.identifier
-        text, builder = mention(c.identifier, display)
-        texts_and_builders.append((text, builder))
+        if _is_phone(c.identifier):
+            text, builder = mention(c.identifier, display)
+            texts_and_builders.append((text, builder))
+        else:
+            plain_names.append(display)
 
-    names_part = ", ".join(t for t, _ in texts_and_builders)
+    all_parts = [t for t, _ in texts_and_builders] + plain_names
+    names_part = ", ".join(all_parts)
     full_msg = prefix + names_part
     specs = []
     for text, builder in texts_and_builders:
@@ -93,32 +102,30 @@ def _build_mention_message(contacts_to_mention, prefix):
 
 
 def _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, contacts, task_date, days_until, debug_log=None):
+    if days_until == 0:
+        prefix = f"Erinnerung: {task_name} ist heute dran! Zuständig: "
+    else:
+        prefix = f"Erinnerung: {task_name} ist am {task_date.strftime('%d.%m.')} dran (in {days_until} Tagen). Zuständig: "
+
     if assignee_name:
         matched = _match_contact(assignee_name, contacts, log=debug_log)
-        if matched:
+        if matched and _is_phone(matched.identifier):
             display = matched.name or assignee_name
             text, builder = mention(matched.identifier, display)
-            if days_until == 0:
-                msg = f"Erinnerung: {task_name} ist heute dran! Zuständig: {text}"
-            else:
-                msg = f"Erinnerung: {task_name} ist am {task_date.strftime('%d.%m.')} dran (in {days_until} Tagen). Zuständig: {text}"
+            msg = prefix + text
             send_with_mentions(ctx.signal, chat, msg, [builder(msg.index(text))])
         else:
-            if days_until == 0:
-                msg = f"Erinnerung: {task_name} ist heute dran! Zuständig: {assignee_name}"
-            else:
-                msg = f"Erinnerung: {task_name} ist am {task_date.strftime('%d.%m.')} dran (in {days_until} Tagen). Zuständig: {assignee_name}"
-            ctx.signal.send_to_chat(chat, msg)
+            display = matched.name if matched else assignee_name
+            ctx.signal.send_to_chat(chat, prefix + display)
     else:
         matched_contacts = [_match_contact(a, contacts, log=debug_log) for a in assignee_names]
         matched_contacts = [c for c in matched_contacts if c]
-        if days_until == 0:
-            prefix = f"Erinnerung: {task_name} ist heute dran! Zuständig: "
-        else:
-            prefix = f"Erinnerung: {task_name} ist am {task_date.strftime('%d.%m.')} dran (in {days_until} Tagen). Zuständig: "
         if matched_contacts:
             msg, specs = _build_mention_message(matched_contacts, prefix)
-            send_with_mentions(ctx.signal, chat, msg, specs)
+            if specs:
+                send_with_mentions(ctx.signal, chat, msg, specs)
+            else:
+                ctx.signal.send_to_chat(chat, msg)
         else:
             ctx.signal.send_to_chat(chat, prefix + ", ".join(assignee_names))
 

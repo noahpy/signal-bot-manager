@@ -173,17 +173,15 @@ def _sync_worker():
         contacts = client.list_contacts()
         for c in contacts:
             number = c.get("number")
-            if not number:
-                continue
+            uuid = c.get("uuid")
             profile = c.get("profile") or {}
-            name = (
-                c.get("name")
-                or c.get("contactName")
-                or " ".join(filter(None, [profile.get("givenName"), profile.get("familyName")]))
-                or c.get("profileName", "")
-            )
+            profile_name = " ".join(filter(None, [profile.get("givenName"), profile.get("familyName")])).strip()
+            name = profile_name or c.get("name") or c.get("contactName") or c.get("profileName", "")
+            identifier = number or uuid
+            if not identifier:
+                continue
             Chat.objects.update_or_create(
-                identifier=number,
+                identifier=identifier,
                 defaults={
                     "chat_type": Chat.ChatType.CONTACT,
                     "name": name.strip(),
