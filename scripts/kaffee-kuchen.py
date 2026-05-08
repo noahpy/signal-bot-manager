@@ -10,7 +10,8 @@ from core.utils import (
     pin_message,
     get_name,
     load,
-    store
+    store,
+    get_own_number
 )
 
 NAMESPAE = "kkk-weekly"
@@ -39,6 +40,9 @@ def run(ctx):
     send_with_mentions(ctx.signal, chat, msg, [m(msg.index(text))])
 
     res = send_poll(ctx.signal, chat, "Wann KKK?", ["Freitag", "Samstag", "Sonntag"])
+    pin_message(ctx.signal, chat, get_own_number(), res["timestamp"], 400000)
+
+
 
 
 
