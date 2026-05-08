@@ -47,7 +47,7 @@ def start_linking(device_name="signal-bot"):
             )
             for line in proc.stdout:
                 line = line.strip()
-                if line.startswith("tsdevice:"):
+                if line.startswith(("tsdevice:", "sgnl://linkdevice")):
                     _link_state["uri"] = line
                     break
 
