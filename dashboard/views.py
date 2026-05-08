@@ -146,9 +146,11 @@ def chat_list(request):
 
 
 def chat_sync(request):
+    errors = []
     if request.method == "POST":
+        client = SignalClient()
+
         try:
-            client = SignalClient()
             groups = client.list_groups()
             for g in groups:
                 gid = g.get("id") or g.get("groupId")
@@ -160,21 +162,33 @@ def chat_sync(request):
                             "name": g.get("name", ""),
                         },
                     )
+        except Exception as e:
+            errors.append(f"Groups: {e}")
+
+        try:
             contacts = client.list_contacts()
             for c in contacts:
                 number = c.get("number")
-                if number:
-                    Chat.objects.update_or_create(
-                        identifier=number,
-                        defaults={
-                            "chat_type": Chat.ChatType.CONTACT,
-                            "name": c.get("name") or c.get("profileName", ""),
-                        },
-                    )
-        except SignalClientError:
-            pass
+                if not number:
+                    continue
+                profile = c.get("profile") or {}
+                name = (
+                    c.get("name")
+                    or c.get("contactName")
+                    or " ".join(filter(None, [profile.get("givenName"), profile.get("familyName")]))
+                    or c.get("profileName", "")
+                )
+                Chat.objects.update_or_create(
+                    identifier=number,
+                    defaults={
+                        "chat_type": Chat.ChatType.CONTACT,
+                        "name": name.strip(),
+                    },
+                )
+        except Exception as e:
+            errors.append(f"Contacts: {e}")
 
     if request.headers.get("HX-Request"):
         chats = Chat.objects.all()
-        return render(request, "dashboard/partials/chat_list.html", {"chats": chats})
+        return render(request, "dashboard/partials/chat_list.html", {"chats": chats, "errors": errors})
     return redirect("dashboard:chat_list")

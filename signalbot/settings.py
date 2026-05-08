@@ -125,6 +125,5 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SIGNAL_CLI_PATH = '/usr/bin/signal-cli'
-SIGNAL_CLI_SOCKET = '/tmp/signal-bot.sock'
 SIGNAL_CLI_CONFIG = Path.home() / '.local/share/signal-cli'
 SCRIPTS_DIR = BASE_DIR / 'scripts'

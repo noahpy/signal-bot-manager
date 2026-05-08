@@ -1,14 +1,13 @@
 import json
 import logging
-import os
 import re
-import socket
+import subprocess
 import time
 
 from django.conf import settings
 
 from core.executor import execute_job
-from core.models import Trigger
+from core.models import SignalAccount, Trigger
 
 logger = logging.getLogger(__name__)
 
@@ -19,31 +18,45 @@ def listener_loop():
         try:
             _listen()
         except Exception:
-            logger.exception("Listener error, reconnecting in 5s...")
-            time.sleep(5)
+            logger.exception("Listener error, restarting in 10s...")
+            time.sleep(10)
 
 
 def _listen():
-    while not os.path.exists(settings.SIGNAL_CLI_SOCKET):
-        logger.info("Waiting for daemon socket...")
-        time.sleep(2)
+    acct = SignalAccount.objects.filter(linked=True).first()
+    if not acct or not acct.phone_number:
+        logger.info("No linked account, waiting...")
+        time.sleep(10)
+        return
 
-    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.connect(settings.SIGNAL_CLI_SOCKET)
-    logger.info("Connected to signal-cli daemon socket")
+    cmd = [
+        settings.SIGNAL_CLI_PATH,
+        "--config", str(settings.SIGNAL_CLI_CONFIG),
+        "-a", acct.phone_number,
+        "--output=json",
+        "jsonRpc",
+    ]
+    logger.info("Starting jsonRpc listener for %s", acct.phone_number)
+    proc = subprocess.Popen(
+        cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
 
-    buf = b""
     try:
-        while True:
-            chunk = sock.recv(4096)
-            if not chunk:
-                break
-            buf += chunk
-            while b"\n" in buf:
-                line, buf = buf.split(b"\n", 1)
-                _handle_line(line.decode())
+        for line in proc.stdout:
+            line = line.strip()
+            if not line:
+                continue
+            _handle_line(line)
     finally:
-        sock.close()
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
 
 
 def _handle_line(line):

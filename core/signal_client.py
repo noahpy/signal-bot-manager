@@ -1,5 +1,5 @@
 import json
-import socket
+import subprocess
 
 from django.conf import settings
 
@@ -9,48 +9,58 @@ class SignalClientError(Exception):
 
 
 class SignalClient:
-    def __init__(self, socket_path=None):
-        self._socket_path = socket_path or settings.SIGNAL_CLI_SOCKET
-        self._id_counter = 0
+    def __init__(self, account=None):
+        self._account = account
 
-    def _call(self, method, **params):
-        self._id_counter += 1
-        request = {
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params,
-            "id": self._id_counter,
-        }
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    @property
+    def account(self):
+        if self._account:
+            return self._account
+        from core.models import SignalAccount
+        acct = SignalAccount.objects.filter(linked=True).first()
+        if acct:
+            return acct.phone_number
+        return None
+
+    def _run(self, *args, timeout=30, json_output=True):
+        cmd = [settings.SIGNAL_CLI_PATH, "--config", str(settings.SIGNAL_CLI_CONFIG)]
+        acct = self.account
+        if acct:
+            cmd += ["-a", acct]
+        if json_output:
+            cmd += ["--output=json"]
+        cmd += list(args)
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        if result.returncode != 0:
+            raise SignalClientError(result.stderr.strip() or f"signal-cli exited with code {result.returncode}")
+
+        if not json_output or not result.stdout.strip():
+            return result.stdout.strip()
+
         try:
-            sock.connect(self._socket_path)
-            sock.sendall(json.dumps(request).encode() + b"\n")
-            data = b""
-            while True:
-                chunk = sock.recv(4096)
-                if not chunk:
-                    break
-                data += chunk
-                if b"\n" in data:
-                    break
-            response = json.loads(data.decode().strip())
-            if "error" in response:
-                raise SignalClientError(response["error"].get("message", str(response["error"])))
-            return response.get("result")
-        finally:
-            sock.close()
+            return json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return result.stdout.strip()
 
     def send(self, recipient, message, attachments=None):
-        params = {"recipient": [recipient], "message": message}
+        args = ["send", "-m", message, recipient]
         if attachments:
-            params["attachments"] = attachments
-        return self._call("send", **params)
+            for a in attachments:
+                args += ["-a", a]
+        return self._run(*args, timeout=30)
 
     def send_group(self, group_id, message, attachments=None):
-        params = {"groupId": group_id, "message": message}
+        args = ["send", "-m", message, "-g", group_id]
         if attachments:
-            params["attachments"] = attachments
-        return self._call("send", **params)
+            for a in attachments:
+                args += ["-a", a]
+        return self._run(*args, timeout=30)
 
     def send_to_chat(self, chat, message, attachments=None):
         from core.models import Chat
@@ -59,10 +69,18 @@ class SignalClient:
         return self.send(chat.identifier, message, attachments)
 
     def list_groups(self):
-        return self._call("listGroups") or []
+        try:
+            result = self._run("listGroups", timeout=120)
+        except subprocess.TimeoutExpired:
+            return []
+        return result if isinstance(result, list) else []
 
     def list_contacts(self):
-        return self._call("listContacts") or []
+        try:
+            result = self._run("listContacts", timeout=60)
+        except subprocess.TimeoutExpired:
+            return []
+        return result if isinstance(result, list) else []
 
-    def get_account(self):
-        return self._call("listAccounts")
+    def list_accounts(self):
+        return self._run("listAccounts", timeout=15)
