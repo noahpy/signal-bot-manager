@@ -70,10 +70,29 @@ def _run_job(job_id, trigger_id, trigger_context):
         job_logger.removeHandler(handler)
 
 
+def _resolve_chats(job, trigger_context):
+    chats = list(job.target_chats.all())
+    if job.reply_to_trigger_chat and trigger_context:
+        group_id = trigger_context.get("group")
+        sender = trigger_context.get("sender")
+        identifier = group_id or sender
+        if identifier:
+            try:
+                trigger_chat = Chat.objects.get(identifier=identifier)
+            except Chat.DoesNotExist:
+                chat_type = Chat.ChatType.GROUP if group_id else Chat.ChatType.CONTACT
+                trigger_chat = Chat.objects.create(
+                    identifier=identifier, chat_type=chat_type, name=""
+                )
+            if trigger_chat not in chats:
+                chats.insert(0, trigger_chat)
+    return chats
+
+
 def _execute_simple(job, execution, job_logger):
     client = SignalClient()
     message = job.message_template
-    chats = list(job.target_chats.all())
+    chats = _resolve_chats(job, execution.trigger_context)
     job_logger.info("Sending message to %d chat(s)", len(chats))
     for chat in chats:
         client.send_to_chat(chat, message)
@@ -87,7 +106,7 @@ def _execute_script(job, execution, job_logger):
 
     ctx = JobContext(
         signal=SignalClient(),
-        target_chats=list(job.target_chats.all()),
+        target_chats=_resolve_chats(job, execution.trigger_context),
         config=job.config_json,
         trigger_context=execution.trigger_context,
         log=job_logger,

@@ -19,7 +19,7 @@ def _get_script_choices():
 class JobForm(forms.ModelForm):
     class Meta:
         model = Job
-        fields = ["name", "description", "job_type", "script_path", "message_template", "target_chats", "config_json"]
+        fields = ["name", "description", "job_type", "script_path", "message_template", "target_chats", "reply_to_trigger_chat", "config_json"]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 2}),
             "message_template": forms.Textarea(attrs={"rows": 3}),

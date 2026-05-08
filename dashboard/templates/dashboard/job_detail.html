@@ -40,10 +40,11 @@
         <tr>
             <td><strong>Target Chats</strong></td>
             <td>
+                {% if job.reply_to_trigger_chat %}<span class="badge badge-info">Reply to trigger chat</span> {% endif %}
                 {% for chat in job.target_chats.all %}
                     {{ chat }}{% if not forloop.last %}, {% endif %}
                 {% empty %}
-                    (none)
+                    {% if not job.reply_to_trigger_chat %}(none){% endif %}
                 {% endfor %}
             </td>
         </tr>

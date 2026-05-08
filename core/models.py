@@ -41,6 +41,10 @@ class Job(models.Model):
     script_path = models.CharField(max_length=500, blank=True)
     message_template = models.TextField(blank=True)
     target_chats = models.ManyToManyField(Chat, blank=True, related_name="jobs")
+    reply_to_trigger_chat = models.BooleanField(
+        default=False,
+        help_text="Send to the chat that triggered the job instead of (or in addition to) the target chats.",
+    )
     config_json = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
