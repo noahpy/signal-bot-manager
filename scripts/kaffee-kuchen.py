@@ -53,7 +53,7 @@ def run(ctx):
         next_decider_num = candidate[0]
         break
 
-    if next_decider_name is None:
+    if next_decider_num is None:
         ctx.signal.send_chat(chat, "No one present! See you next week!")
         return
 
