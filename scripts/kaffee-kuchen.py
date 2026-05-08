@@ -46,7 +46,7 @@ def run(ctx):
     for mem in members:
         if mem['number'] not in last_decider_stats:
             # new member receive max freq + 1
-            last_decider_stats[mem['nummber']] = max_freq+1
+            last_decider_stats[mem['number']] = max_freq+1
             last_decider_stats_list.append((mem['number'], max_freq+1))
     mem_numbers = [m['number'] for m in members]
     keys = list(last_decider_stats.keys())
