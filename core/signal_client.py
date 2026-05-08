@@ -36,23 +36,33 @@ class SignalClient:
             raise SignalClientError("signal-cli jsonRpc process not running")
         return jsonrpc.call(method, timeout=timeout, **params)
 
-    def send(self, recipient, message, attachments=None):
+    def send(self, recipient, message, attachments=None, notify_self=False):
         params = {"recipient": [recipient], "message": message}
         if attachments:
-            params["attachments"] = attachments
+            params["attachment"] = attachments
+        if notify_self:
+            params["notifySelf"] = True
         return self._call("send", timeout=30, **params)
 
-    def send_group(self, group_id, message, attachments=None):
+    def send_group(self, group_id, message, attachments=None, notify_self=False):
         params = {"groupId": group_id, "message": message}
         if attachments:
-            params["attachments"] = attachments
+            params["attachment"] = attachments
+        if notify_self:
+            params["notifySelf"] = True
         return self._call("send", timeout=30, **params)
 
-    def send_to_chat(self, chat, message, attachments=None):
+    def send_note_to_self(self, message, attachments=None):
+        params = {"noteToSelf": True, "message": message}
+        if attachments:
+            params["attachment"] = attachments
+        return self._call("send", timeout=30, **params)
+
+    def send_to_chat(self, chat, message, attachments=None, notify_self=False):
         from core.models import Chat
         if chat.chat_type == Chat.ChatType.GROUP:
-            return self.send_group(chat.identifier, message, attachments)
-        return self.send(chat.identifier, message, attachments)
+            return self.send_group(chat.identifier, message, attachments, notify_self)
+        return self.send(chat.identifier, message, attachments, notify_self)
 
     def list_groups(self):
         try:
@@ -79,27 +89,61 @@ class SignalClient:
     def send_with_mention(self, recipient, message, mentions, attachments=None):
         params = {"recipient": [recipient], "message": message, "mention": mentions}
         if attachments:
-            params["attachments"] = attachments
+            params["attachment"] = attachments
         return self._call("send", timeout=30, **params)
 
     def send_group_with_mention(self, group_id, message, mentions, attachments=None):
         params = {"groupId": group_id, "message": message, "mention": mentions}
         if attachments:
-            params["attachments"] = attachments
+            params["attachment"] = attachments
         return self._call("send", timeout=30, **params)
 
-    def send_poll(self, recipient, question, options, multi_vote=False):
+    def send_poll(self, recipient, question, options, no_multi=False):
         params = {
             "recipient": [recipient],
-            "message": question,
-            "pollMessage": {"question": question, "options": options, "multiVote": multi_vote},
+            "question": question,
+            "option": options,
         }
-        return self._call("send", timeout=30, **params)
+        if no_multi:
+            params["noMulti"] = True
+        return self._call("sendPollCreate", timeout=30, **params)
 
-    def send_group_poll(self, group_id, question, options, multi_vote=False):
+    def send_group_poll(self, group_id, question, options, no_multi=False):
         params = {
             "groupId": group_id,
-            "message": question,
-            "pollMessage": {"question": question, "options": options, "multiVote": multi_vote},
+            "question": question,
+            "option": options,
         }
-        return self._call("send", timeout=30, **params)
+        if no_multi:
+            params["noMulti"] = True
+        return self._call("sendPollCreate", timeout=30, **params)
+
+    def pin_message(self, recipient, target_author, target_timestamp, pin_duration=-1):
+        return self._call("sendPinMessage", timeout=30,
+            recipient=[recipient],
+            targetAuthor=target_author,
+            targetTimestamp=target_timestamp,
+            pinDuration=pin_duration,
+        )
+
+    def pin_group_message(self, group_id, target_author, target_timestamp, pin_duration=-1):
+        return self._call("sendPinMessage", timeout=30,
+            groupId=group_id,
+            targetAuthor=target_author,
+            targetTimestamp=target_timestamp,
+            pinDuration=pin_duration,
+        )
+
+    def unpin_message(self, recipient, target_author, target_timestamp):
+        return self._call("sendUnpinMessage", timeout=30,
+            recipient=[recipient],
+            targetAuthor=target_author,
+            targetTimestamp=target_timestamp,
+        )
+
+    def unpin_group_message(self, group_id, target_author, target_timestamp):
+        return self._call("sendUnpinMessage", timeout=30,
+            groupId=group_id,
+            targetAuthor=target_author,
+            targetTimestamp=target_timestamp,
+        )

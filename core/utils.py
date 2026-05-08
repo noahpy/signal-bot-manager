@@ -1,11 +1,15 @@
 """Utilities for signal-bot job scripts.
 
 Script authors can import helpers from here:
-    from core.utils import send_to_all, mention, send_poll, send_picture, get_group_members
+    from core.utils import (
+        send_to_all, send_picture, send_attachment,
+        send_poll, get_group_members,
+        mention, send_with_mentions,
+        pin_message, unpin_message,
+    )
 """
 
 from core.models import Chat
-from core.signal_client import SignalClient
 
 
 def send_to_all(signal_client, chats, message, attachments=None):
@@ -20,20 +24,21 @@ def get_group_members(signal_client, chat):
 
 
 def send_picture(signal_client, chat, file_path, caption=""):
-    signal_client.send_to_chat(chat, caption, attachments=[str(file_path)])
+    signal_client.send_to_chat(chat, caption or " ", attachments=[str(file_path)])
 
 
 def send_attachment(signal_client, chat, file_path, message=""):
-    signal_client.send_to_chat(chat, message, attachments=[str(file_path)])
+    signal_client.send_to_chat(chat, message or " ", attachments=[str(file_path)])
 
 
-def send_poll(signal_client, chat, question, options, multi_vote=False):
+def send_poll(signal_client, chat, question, options, single_choice=False):
+    """Send a poll. By default allows multiple selections; set single_choice=True to restrict."""
     if chat.chat_type == Chat.ChatType.GROUP:
         return signal_client.send_group_poll(
-            chat.identifier, question, options, multi_vote
+            chat.identifier, question, options, no_multi=single_choice
         )
     return signal_client.send_poll(
-        chat.identifier, question, options, multi_vote
+        chat.identifier, question, options, no_multi=single_choice
     )
 
 
@@ -50,7 +55,7 @@ def mention(phone_number, display_text=None):
         mentions = [m(message.index(text))]
         signal_client.send_group_with_mention(group_id, message, mentions)
     """
-    placeholder = f"￼" if not display_text else display_text
+    placeholder = display_text or "￼"
     length = len(placeholder.encode("utf-16-le")) // 2
 
     def build(start_position):
@@ -70,6 +75,28 @@ def send_with_mentions(signal_client, chat, message, mention_specs, attachments=
         )
     return signal_client.send_with_mention(
         chat.identifier, message, mention_specs, attachments
+    )
+
+
+def pin_message(signal_client, chat, target_author, target_timestamp, pin_duration=-1):
+    """Pin a message in a chat. target_timestamp is the message's timestamp from the send result."""
+    if chat.chat_type == Chat.ChatType.GROUP:
+        return signal_client.pin_group_message(
+            chat.identifier, target_author, target_timestamp, pin_duration
+        )
+    return signal_client.pin_message(
+        chat.identifier, target_author, target_timestamp, pin_duration
+    )
+
+
+def unpin_message(signal_client, chat, target_author, target_timestamp):
+    """Unpin a previously pinned message."""
+    if chat.chat_type == Chat.ChatType.GROUP:
+        return signal_client.unpin_group_message(
+            chat.identifier, target_author, target_timestamp
+        )
+    return signal_client.unpin_message(
+        chat.identifier, target_author, target_timestamp
     )
 
 
