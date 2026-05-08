@@ -124,6 +124,26 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(asctime)s [%(name)s] %(levelname)s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
 SIGNAL_CLI_PATH = '/usr/bin/signal-cli'
 SIGNAL_CLI_CONFIG = Path.home() / '.local/share/signal-cli'
 SCRIPTS_DIR = BASE_DIR / 'scripts'

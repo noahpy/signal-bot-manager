@@ -80,6 +80,7 @@
         border-radius: 4px;
         padding: 0.5rem;
     }
+    .checkbox-scroll div > div,
     .checkbox-scroll li {
         list-style: none;
         padding: 0.15rem 0;
@@ -92,10 +93,11 @@
 <script>
 function filterCheckboxes(input, containerId) {
     var query = input.value.toLowerCase();
-    var items = document.getElementById(containerId).querySelectorAll('li');
-    items.forEach(function(li) {
-        var text = li.textContent.toLowerCase();
-        li.style.display = text.includes(query) ? '' : 'none';
+    var container = document.getElementById(containerId);
+    var items = container.querySelectorAll('div > div, li');
+    items.forEach(function(el) {
+        var text = el.textContent.toLowerCase();
+        el.style.display = text.includes(query) ? '' : 'none';
     });
 }
 </script>

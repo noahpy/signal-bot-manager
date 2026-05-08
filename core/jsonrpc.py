@@ -24,8 +24,11 @@ def start(account, on_notification=None):
         settings.SIGNAL_CLI_PATH,
         "--config", str(settings.SIGNAL_CLI_CONFIG),
         "-a", account,
+        "--trust-new-identities", "always",
         "--output=json",
         "jsonRpc",
+        "--ignore-avatars",
+        "--ignore-stories",
     ]
     logger.info("Starting shared jsonRpc process: %s", " ".join(cmd))
     _process = subprocess.Popen(

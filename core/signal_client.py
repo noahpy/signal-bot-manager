@@ -67,3 +67,37 @@ class SignalClient:
             return result if isinstance(result, list) else []
         except Exception:
             return []
+
+    def get_group_members(self, group_id):
+        groups = self.list_groups()
+        for g in groups:
+            gid = g.get("id") or g.get("groupId")
+            if gid == group_id:
+                return g.get("members", [])
+        return []
+
+    def send_with_mention(self, recipient, message, mentions, attachments=None):
+        params = {"recipient": [recipient], "message": message, "mention": mentions}
+        if attachments:
+            params["attachments"] = attachments
+        return self._call("send", timeout=30, **params)
+
+    def send_group_with_mention(self, group_id, message, mentions, attachments=None):
+        params = {"groupId": group_id, "message": message, "mention": mentions}
+        if attachments:
+            params["attachments"] = attachments
+        return self._call("send", timeout=30, **params)
+
+    def send_poll(self, recipient, question, options, multi_vote=False):
+        params = {
+            "recipient": [recipient],
+            "pollMessage": {"question": question, "options": options, "multiVote": multi_vote},
+        }
+        return self._call("send", timeout=30, **params)
+
+    def send_group_poll(self, group_id, question, options, multi_vote=False):
+        params = {
+            "groupId": group_id,
+            "pollMessage": {"question": question, "options": options, "multiVote": multi_vote},
+        }
+        return self._call("send", timeout=30, **params)

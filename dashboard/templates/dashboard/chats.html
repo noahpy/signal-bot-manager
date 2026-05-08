@@ -8,12 +8,40 @@
     <p>Contacts and groups known to the bot.</p>
 </hgroup>
 
-<form method="post" action="{% url 'dashboard:chat_sync' %}" hx-post="{% url 'dashboard:chat_sync' %}" hx-target="#chat-section" hx-swap="innerHTML">
-    {% csrf_token %}
-    <button type="submit" class="outline">Sync from Signal</button>
-</form>
+<div class="grid">
+    <form method="post" action="{% url 'dashboard:chat_sync' %}" hx-post="{% url 'dashboard:chat_sync' %}" hx-target="#chat-section" hx-swap="innerHTML">
+        {% csrf_token %}
+        <button type="submit" class="outline">Sync from Signal</button>
+    </form>
+    <div>
+        <input type="search" id="chat-search" placeholder="Filter chats..." oninput="filterChatTable()">
+    </div>
+    <div>
+        <select id="chat-type-filter" onchange="filterChatTable()">
+            <option value="">All types</option>
+            <option value="contact">Contacts</option>
+            <option value="group">Groups</option>
+        </select>
+    </div>
+</div>
 
 <div id="chat-section">
     {% include "dashboard/partials/chat_list.html" %}
 </div>
+
+<script>
+function filterChatTable() {
+    var query = document.getElementById('chat-search').value.toLowerCase();
+    var typeFilter = document.getElementById('chat-type-filter').value.toLowerCase();
+    var rows = document.querySelectorAll('#chat-section tbody tr');
+    rows.forEach(function(row) {
+        var name = (row.cells[0] && row.cells[0].textContent || '').toLowerCase();
+        var type = (row.cells[1] && row.cells[1].textContent || '').toLowerCase();
+        var id = (row.cells[2] && row.cells[2].textContent || '').toLowerCase();
+        var matchesQuery = !query || name.includes(query) || id.includes(query);
+        var matchesType = !typeFilter || type === typeFilter;
+        row.style.display = (matchesQuery && matchesType) ? '' : 'none';
+    });
+}
+</script>
 {% endblock %}
