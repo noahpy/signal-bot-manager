@@ -9,7 +9,41 @@ Script authors can import helpers from here:
     )
 """
 
-from core.models import Chat
+from core.models import Chat, KeyValue
+
+
+def store(namespace, key, value):
+    """Persist a value to the database. Value can be any JSON-serializable type."""
+    KeyValue.objects.update_or_create(
+        namespace=namespace, key=key,
+        defaults={"value": value},
+    )
+
+
+def load(namespace, key, default=None):
+    """Load a previously stored value. Returns default if not found."""
+    try:
+        return KeyValue.objects.get(namespace=namespace, key=key).value
+    except KeyValue.DoesNotExist:
+        return default
+
+
+def load_all(namespace):
+    """Load all key-value pairs in a namespace as a dict."""
+    return {
+        kv.key: kv.value
+        for kv in KeyValue.objects.filter(namespace=namespace)
+    }
+
+
+def delete(namespace, key):
+    """Delete a stored value."""
+    KeyValue.objects.filter(namespace=namespace, key=key).delete()
+
+
+def delete_all(namespace):
+    """Delete all stored values in a namespace."""
+    KeyValue.objects.filter(namespace=namespace).delete()
 
 
 def get_name(phone_number):

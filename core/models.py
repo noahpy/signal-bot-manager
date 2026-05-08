@@ -101,3 +101,16 @@ class JobExecution(models.Model):
 
     def __str__(self):
         return f"{self.job.name} @ {self.started_at:%Y-%m-%d %H:%M}"
+
+
+class KeyValue(models.Model):
+    namespace = models.CharField(max_length=200)
+    key = models.CharField(max_length=200)
+    value = models.JSONField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [("namespace", "key")]
+
+    def __str__(self):
+        return f"{self.namespace}:{self.key}"
