@@ -38,23 +38,36 @@ def listener_loop():
 
 def _handle_notification(msg):
     envelope = msg.get("params", {}).get("envelope", {})
+    source = envelope.get("source")
 
-    sync = envelope.get("syncMessage")
-    if sync and sync.get("sentMessage"):
-        sent = sync["sentMessage"]
-        logger.info("Sync sentMessage: dest=%s msg=%s",
-                     sent.get("destination") or sent.get("destinationNumber"),
-                     (sent.get("message") or "")[:50])
+    text = None
+    sender = None
+    group_id = None
 
     data_message = envelope.get("dataMessage")
-    if not data_message or not data_message.get("message"):
+    if data_message and data_message.get("message"):
+        text = data_message["message"]
+        sender = source
+        group_id = (data_message.get("groupInfo") or {}).get("groupId")
+
+    if not text:
+        sync = envelope.get("syncMessage")
+        if sync and sync.get("sentMessage"):
+            sent = sync["sentMessage"]
+            if sent.get("message"):
+                text = sent["message"]
+                sender = source
+                group_info = sent.get("groupInfo") or {}
+                group_id = group_info.get("groupId")
+
+    if not text:
         return
 
-    text = data_message["message"]
-    sender = envelope.get("source")
-    group_id = (data_message.get("groupInfo") or {}).get("groupId")
-    logger.info("Incoming message: sender=%s group=%s text=%s", sender, group_id, text[:50])
+    logger.info("Message: sender=%s group=%s text=%s", sender, group_id, text[:80])
+    _match_triggers(text, sender, group_id)
 
+
+def _match_triggers(text, sender, group_id):
     triggers = Trigger.objects.filter(
         trigger_type=Trigger.TriggerType.MESSAGE,
         enabled=True,
