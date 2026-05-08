@@ -129,6 +129,9 @@ def run(ctx):
         data = json.load(f)
 
     if debug:
+        ctx.log.info("[debug] === Group members ===")
+        for m in members:
+            ctx.log.info("  [debug] %s -> get_name: '%s'", m["number"], get_name(m["number"]))
         all_assignees = set()
         for task in data["tasks"]:
             all_assignees.update(task["assignees"])
