@@ -23,21 +23,22 @@ class SignalClient:
         return self._detect_account()
 
     def _detect_account(self):
+        import re
         try:
             result = subprocess.run(
                 [settings.SIGNAL_CLI_PATH, "--config", str(settings.SIGNAL_CLI_CONFIG), "listAccounts"],
-                capture_output=True, text=True, timeout=10,
+                capture_output=True, text=True, timeout=15,
             )
-            for line in result.stdout.strip().splitlines():
-                line = line.strip()
-                if line.startswith("+"):
-                    from core.models import SignalAccount
-                    from django.utils import timezone
-                    SignalAccount.objects.update_or_create(
-                        phone_number=line,
-                        defaults={"linked": True, "linked_at": timezone.now()},
-                    )
-                    return line
+            match = re.search(r"(\+\d+)", result.stdout)
+            if match:
+                phone = match.group(1)
+                from core.models import SignalAccount
+                from django.utils import timezone
+                SignalAccount.objects.update_or_create(
+                    phone_number=phone,
+                    defaults={"linked": True, "linked_at": timezone.now()},
+                )
+                return phone
         except Exception:
             pass
         return None

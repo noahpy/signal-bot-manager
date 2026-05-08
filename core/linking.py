@@ -73,19 +73,19 @@ def start_linking(device_name="signal-bot"):
 
 
 def _save_account_from_link():
+    import re
     try:
         from core.models import SignalAccount
         result = subprocess.run(
             [settings.SIGNAL_CLI_PATH, "--config", str(settings.SIGNAL_CLI_CONFIG), "listAccounts"],
-            capture_output=True, text=True,
+            capture_output=True, text=True, timeout=15,
         )
-        phone = result.stdout.strip().split("\n")[-1].strip() if result.stdout.strip() else ""
-        SignalAccount.objects.update_or_create(
-            defaults={
-                "phone_number": phone,
-                "linked": True,
-                "linked_at": timezone.now(),
-            },
-        )
+        match = re.search(r"(\+\d+)", result.stdout)
+        phone = match.group(1) if match else ""
+        if phone:
+            SignalAccount.objects.update_or_create(
+                phone_number=phone,
+                defaults={"linked": True, "linked_at": timezone.now()},
+            )
     except Exception as e:
         logger.error("Failed to save account after linking: %s", e)
