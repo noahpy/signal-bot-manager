@@ -55,7 +55,7 @@ def mention(phone_number, display_text=None):
         mentions = [m(message.index(text))]
         signal_client.send_group_with_mention(group_id, message, mentions)
     """
-    placeholder = display_text or "￼"
+    placeholder = display_text or "plshldr"
     length = len(placeholder.encode("utf-16-le")) // 2
 
     def build(start_position):
