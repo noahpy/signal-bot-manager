@@ -32,11 +32,15 @@ def _parse_date(date_str, year):
 def _part_matches(query_part, full_part):
     """Check if query_part matches full_part meaningfully.
     Strips trailing dots (abbreviations like 'Sch.' or 'S.') before matching.
-    Requires at least 2 chars overlap to avoid spurious single-letter matches.
+    Abbreviations (trailing dot) allow single-char prefix matching.
+    Without a dot, requires at least 2 chars on both sides.
     """
+    is_abbrev = query_part.endswith(".")
     qp = query_part.rstrip(".")
     fp = full_part.rstrip(".")
-    if len(qp) < 2 or len(fp) < 2:
+    if not qp or not fp:
+        return False
+    if not is_abbrev and (len(qp) < 2 or len(fp) < 2):
         return False
     return qp.startswith(fp) or fp.startswith(qp)
 
