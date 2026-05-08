@@ -129,9 +129,13 @@ def run(ctx):
         data = json.load(f)
 
     if debug:
+        ctx.log.info("[debug] === Raw member data (first 3) ===")
+        for m in members[:3]:
+            ctx.log.info("  [debug] raw: %s", m)
         ctx.log.info("[debug] === Group members ===")
         for m in members:
-            ctx.log.info("  [debug] %s -> get_name: '%s'", m["number"], get_name(m["number"]))
+            num = m.get("number") if isinstance(m, dict) else m
+            ctx.log.info("  [debug] %s -> get_name: '%s' (keys: %s)", num, get_name(num) if num else 'N/A', list(m.keys()) if isinstance(m, dict) else 'not-dict')
         all_assignees = set()
         for task in data["tasks"]:
             all_assignees.update(task["assignees"])
