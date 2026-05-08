@@ -33,7 +33,7 @@ def run(ctx):
         last_decider_stats_list = list(last_decider_stats.items())
 
     last_decider_stats_list.sort()
-    next_decider_num = last_decider_stats[0][1]
+    next_decider_num = last_decider_stats_list[0][1]
     next_decider_name = get_name(next_decider_num)
 
     text, m = mention(next_decider_num)
