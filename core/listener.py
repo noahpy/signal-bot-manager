@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import socket
 import time
@@ -23,6 +24,10 @@ def listener_loop():
 
 
 def _listen():
+    while not os.path.exists(settings.SIGNAL_CLI_SOCKET):
+        logger.info("Waiting for daemon socket...")
+        time.sleep(2)
+
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.connect(settings.SIGNAL_CLI_SOCKET)
     logger.info("Connected to signal-cli daemon socket")

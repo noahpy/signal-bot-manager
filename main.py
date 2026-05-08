@@ -37,6 +37,15 @@ def run_daemon():
     dm._process.wait()
 
 
+def _wait_for_socket(path, timeout=30):
+    import time
+    for _ in range(timeout * 2):
+        if os.path.exists(path):
+            return True
+        time.sleep(0.5)
+    return False
+
+
 def main():
     processes = []
 
@@ -49,14 +58,27 @@ def main():
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
-    targets = [
-        ("daemon", run_daemon),
+    _setup_django()
+    from django.conf import settings
+    socket_path = settings.SIGNAL_CLI_SOCKET
+
+    # Start daemon first and wait for socket
+    daemon_proc = multiprocessing.Process(target=run_daemon, name="daemon", daemon=True)
+    daemon_proc.start()
+    print(f"Started daemon (pid={daemon_proc.pid})")
+    processes.append(daemon_proc)
+
+    if not _wait_for_socket(socket_path):
+        print("ERROR: signal-cli daemon did not create socket in time", file=sys.stderr)
+        sys.exit(1)
+    print("Daemon socket ready")
+
+    # Now start the rest
+    for name, target in [
         ("django", run_django),
         ("scheduler", run_scheduler),
         ("listener", run_listener),
-    ]
-
-    for name, target in targets:
+    ]:
         p = multiprocessing.Process(target=target, name=name, daemon=True)
         p.start()
         print(f"Started {name} (pid={p.pid})")
