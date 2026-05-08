@@ -20,7 +20,7 @@ LAST_DECIDER_STATS_KEY = "last-decider-stats"
 def not_in_absent(number, absents) -> str | None:
     name = get_name(number)
     for absent in absents:
-        if name.lower().find(absent.lower()):
+        if name.lower().find(absent.lower()) != -1:
             return None
     return name
 
@@ -54,7 +54,7 @@ def run(ctx):
         break
 
     if next_decider_num is None:
-        ctx.signal.send_chat(chat, "No one present! See you next week!")
+        ctx.signal.send_to_chat(chat, "No one present! See you next week!")
         return
 
     text, m = mention(next_decider_num)
