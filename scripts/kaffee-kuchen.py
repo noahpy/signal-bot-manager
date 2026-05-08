@@ -14,7 +14,7 @@ from core.utils import (
     get_own_number
 )
 
-NAMESPAE = "kkk-weekly"
+NAMESPACE = "kkk-weekly"
 LAST_DECIDER_STATS_KEY = "last-decider-stats"
 
 def run(ctx):
@@ -25,7 +25,7 @@ def run(ctx):
     members = get_group_members(ctx.signal, chat)
     ctx.log.info("Group %s has %d members", chat.name, len(members))
 
-    last_decider_stats = load(NAMESPAE, LAST_DECIDER_STATS_KEY)
+    last_decider_stats = load(NAMESPACE, LAST_DECIDER_STATS_KEY)
 
     if not last_decider_stats:
         last_decider_stats_list = [(p['number'], 0) for p in members]
@@ -34,24 +34,27 @@ def run(ctx):
         last_decider_stats_list = list(last_decider_stats.items())
 
     last_decider_stats_list.sort(key=lambda x: (x[1], x[0]))
+
+    ctx.signal.send_to_chat(chat, str(ctx.config))
+
     next_decider_num = last_decider_stats_list[0][0]
     next_decider_name = get_name(next_decider_num)
 
     text, m = mention(next_decider_num)
 
-    if next_decider_name.lower().find("fabian"):
-        msg = f"{text} Hey, {next_decider_name}! Diese Woche ist deine Woche um KKK zu bestimmen. Gebe Ort / Uhrzeit vor und pinne die Nachricht! Reservieren wenn notwendig! Unten kommt noch eine Umfrage."
+    if next_decider_name.lower().find("fabi"):
+        msg = f"Hey, {text}! Diese Woche ist deine Woche um KKK zu bestimmen. Gebe Ort / Uhrzeit vor und pinne die Nachricht! Reservieren wenn notwendig! Unten kommt noch eine Umfrage."
     else:
-        msg = f"{text} Hey, {next_decider_name}! Diese Woche ist deine Woche um KKK zu bestimmen. Gib Ort / Uhrzeit vor und pinne die Nachricht! Reservieren wenn notwendig! Unten kommt noch eine Umfrage."
+        msg = f"Hey, {text}! Diese Woche ist deine Woche um KKK zu bestimmen. Gib Ort / Uhrzeit vor und pinne die Nachricht! Reservieren wenn notwendig! Unten kommt noch eine Umfrage."
 
     send_with_mentions(ctx.signal, chat, msg, [m(msg.index(text))])
 
-    res = send_poll(ctx.signal, chat, "Wann KKK?", ["Freitag", "Samstag", "Sonntag"])
+    res = send_poll(ctx.signal, chat, "Wann KKK?", ["14.00", "14.30", "15.00", "15.30", "16.00"])
     pin_message(ctx.signal, chat, get_own_number(), res["timestamp"], 400000)
 
     last_decider_stats[next_decider_num] += 1
 
-    store(NAMESPAE, LAST_DECIDER_STATS_KEY, last_decider_stats)
+    store(NAMESPACE, LAST_DECIDER_STATS_KEY, last_decider_stats)
 
     
 
