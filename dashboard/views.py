@@ -15,7 +15,10 @@ from dashboard.forms import JobForm, TriggerFormSet
 def index(request):
     jobs = Job.objects.prefetch_related("triggers", "target_chats").all()
     recent_executions = JobExecution.objects.select_related("job")[:10]
-    account = SignalAccount.objects.first()
+    account = SignalAccount.objects.filter(linked=True).first()
+    if not account:
+        SignalClient()._detect_account()
+        account = SignalAccount.objects.filter(linked=True).first()
     return render(request, "dashboard/index.html", {
         "jobs": jobs,
         "recent_executions": recent_executions,
