@@ -91,6 +91,7 @@ class SignalClient:
     def send_poll(self, recipient, question, options, multi_vote=False):
         params = {
             "recipient": [recipient],
+            "message": question,
             "pollMessage": {"question": question, "options": options, "multiVote": multi_vote},
         }
         return self._call("send", timeout=30, **params)
@@ -98,6 +99,7 @@ class SignalClient:
     def send_group_poll(self, group_id, question, options, multi_vote=False):
         params = {
             "groupId": group_id,
+            "message": question,
             "pollMessage": {"question": question, "options": options, "multiVote": multi_vote},
         }
         return self._call("send", timeout=30, **params)
