@@ -17,6 +17,14 @@ from core.utils import (
 NAMESPACE = "kkk-weekly"
 LAST_DECIDER_STATS_KEY = "last-decider-stats"
 
+def not_in_absent(number, absents) -> str | None:
+    name = get_name(number)
+    for absent in absents:
+        if name.lower().find(absent.lower()):
+            return None
+    return name
+
+
 def run(ctx):
     ctx.log.info("=== KKK weekly digest ===")
 
@@ -35,14 +43,23 @@ def run(ctx):
 
     last_decider_stats_list.sort(key=lambda x: (x[1], x[0]))
 
-    ctx.signal.send_to_chat(chat, str(ctx.config))
+    absent_list = ctx.config['absent']
+    next_decider_num = None
 
-    next_decider_num = last_decider_stats_list[0][0]
-    next_decider_name = get_name(next_decider_num)
+    for candidate in last_decider_stats_list:
+        if (name := not_in_absent(candidate[0], absent_list)) is None:
+            continue
+        next_decider_name = name
+        next_decider_num = candidate[0]
+        break
+
+    if next_decider_name is None:
+        ctx.signal.send_chat(chat, "No one present! See you next week!")
+        return
 
     text, m = mention(next_decider_num)
 
-    if next_decider_name.lower().find("fabi"):
+    if next_decider_name.lower().find("fabi") != -1:
         msg = f"Hey, {text}! Diese Woche ist deine Woche um KKK zu bestimmen. Gebe Ort / Uhrzeit vor und pinne die Nachricht! Reservieren wenn notwendig! Unten kommt noch eine Umfrage."
     else:
         msg = f"Hey, {text}! Diese Woche ist deine Woche um KKK zu bestimmen. Gib Ort / Uhrzeit vor und pinne die Nachricht! Reservieren wenn notwendig! Unten kommt noch eine Umfrage."
