@@ -29,6 +29,18 @@ def _parse_date(date_str, year):
     return None, None
 
 
+def _part_matches(query_part, full_part):
+    """Check if query_part matches full_part meaningfully.
+    Strips trailing dots (abbreviations like 'Sch.' or 'S.') before matching.
+    Requires at least 2 chars overlap to avoid spurious single-letter matches.
+    """
+    qp = query_part.rstrip(".")
+    fp = full_part.rstrip(".")
+    if len(qp) < 2 or len(fp) < 2:
+        return False
+    return qp.startswith(fp) or fp.startswith(qp)
+
+
 def _match_contact(name, contacts, log=None):
     name_lower = name.lower()
     name_parts = name_lower.split()
@@ -36,27 +48,24 @@ def _match_contact(name, contacts, log=None):
     best_score = -1
     for c in contacts:
         full = c.name.lower()
-        if not full:
+        if not full or len(full) < 2:
             continue
         if name_lower == full:
             if log:
                 log.info("  [debug] '%s' -> exact match: %s (%s)", name, c.identifier, c.name)
             return c
         full_parts = full.split()
-        if name_lower in full or full in name_lower:
-            score = len(name_lower) * 2
-            if score > best_score:
-                best_score = score
-                best = c
-            continue
+        # Every query part must match some full name part
         matched_parts = 0
+        total_overlap = 0
         for np in name_parts:
             for fp in full_parts:
-                if np in fp or fp in np:
+                if _part_matches(np, fp):
                     matched_parts += 1
+                    total_overlap += min(len(np.rstrip(".")), len(fp.rstrip(".")))
                     break
         if matched_parts == len(name_parts) and matched_parts > 0:
-            score = matched_parts + len(name_lower)
+            score = total_overlap * 10 + matched_parts
             if score > best_score:
                 best_score = score
                 best = c
