@@ -46,6 +46,13 @@ def delete_all(namespace):
     KeyValue.objects.filter(namespace=namespace).delete()
 
 
+def get_own_number():
+    """Get the bot's own phone number."""
+    from core.models import SignalAccount
+    acct = SignalAccount.objects.filter(linked=True).first()
+    return acct.phone_number if acct else None
+
+
 def get_name(phone_number):
     """Look up a contact's display name by phone number. Returns the number itself if not found."""
     try:
