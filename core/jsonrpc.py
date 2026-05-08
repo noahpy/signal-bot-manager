@@ -114,10 +114,12 @@ def _reader_loop():
                     else:
                         _pending[req_id]["result"] = msg.get("result")
                     _pending[req_id]["event"].set()
-        elif msg.get("method") == "receive" and _on_notification:
-            try:
-                _on_notification(msg)
-            except Exception:
-                logger.exception("Error handling notification")
+        elif "method" in msg:
+            logger.info("jsonRpc notification: method=%s", msg.get("method"))
+            if msg.get("method") == "receive" and _on_notification:
+                try:
+                    _on_notification(msg)
+                except Exception:
+                    logger.exception("Error handling notification")
 
     logger.warning("jsonRpc reader loop ended (process exited)")
