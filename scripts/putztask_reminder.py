@@ -31,6 +31,7 @@ def _parse_date(date_str, year):
 
 def _match_member(name, members, log=None):
     name_lower = name.lower()
+    name_parts = name_lower.split()
     best = None
     best_score = -1
     for m in members:
@@ -41,8 +42,23 @@ def _match_member(name, members, log=None):
             if log:
                 log.info("  [debug] '%s' -> exact match: %s (%s)", name, m["number"], get_name(m["number"]))
             return m
+        full_parts = full.split()
+        # Check if whole name is substring of full or vice versa
         if name_lower in full or full in name_lower:
-            score = len(name_lower)
+            score = len(name_lower) * 2
+            if score > best_score:
+                best_score = score
+                best = m
+            continue
+        # Check if all parts of the short name match as substrings of any full name part
+        matched_parts = 0
+        for np in name_parts:
+            for fp in full_parts:
+                if np in fp or fp in np:
+                    matched_parts += 1
+                    break
+        if matched_parts == len(name_parts) and matched_parts > 0:
+            score = matched_parts + len(name_lower)
             if score > best_score:
                 best_score = score
                 best = m
