@@ -38,6 +38,14 @@ def listener_loop():
 
 def _handle_notification(msg):
     envelope = msg.get("params", {}).get("envelope", {})
+
+    sync = envelope.get("syncMessage")
+    if sync and sync.get("sentMessage"):
+        sent = sync["sentMessage"]
+        logger.info("Sync sentMessage: dest=%s msg=%s",
+                     sent.get("destination") or sent.get("destinationNumber"),
+                     (sent.get("message") or "")[:50])
+
     data_message = envelope.get("dataMessage")
     if not data_message or not data_message.get("message"):
         return
@@ -45,6 +53,7 @@ def _handle_notification(msg):
     text = data_message["message"]
     sender = envelope.get("source")
     group_id = (data_message.get("groupInfo") or {}).get("groupId")
+    logger.info("Incoming message: sender=%s group=%s text=%s", sender, group_id, text[:50])
 
     triggers = Trigger.objects.filter(
         trigger_type=Trigger.TriggerType.MESSAGE,
