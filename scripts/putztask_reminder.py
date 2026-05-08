@@ -1,6 +1,9 @@
 import json
+import sqlite3
 from datetime import date, timedelta
 from pathlib import Path
+
+from django.conf import settings
 
 from core.models import Chat
 from core.utils import (
@@ -39,21 +42,44 @@ def _part_matches(query_part, full_part):
     return qp.startswith(fp) or fp.startswith(qp)
 
 
+def _get_signalcli_profiles():
+    """Read profile names from signal-cli's internal recipient table as fallback."""
+    profiles = {}
+    config_dir = Path(settings.SIGNAL_CLI_CONFIG) / "data"
+    if not config_dir.exists():
+        return profiles
+    for db_path in config_dir.glob("*.d/account.db"):
+        try:
+            conn = sqlite3.connect(str(db_path))
+            rows = conn.execute(
+                "SELECT aci, number, profile_given_name, profile_family_name FROM recipient WHERE aci IS NOT NULL"
+            ).fetchall()
+            for aci, number, given, family in rows:
+                name = " ".join(filter(None, [given, family])).strip()
+                if name:
+                    profiles[aci] = {"name": name, "number": number}
+            conn.close()
+        except Exception:
+            pass
+    return profiles
+
+
 def _resolve_members(signal_client, chat):
-    """Get group members and resolve their names via Chat DB (uuid and number lookups)."""
+    """Get group members and resolve their names via Chat DB, falling back to signal-cli's recipient DB."""
     raw_members = get_group_members(signal_client, chat)
+    signalcli_profiles = _get_signalcli_profiles()
     members = []
     for m in raw_members:
         uuid = m.get("uuid")
         number = m.get("number")
         name = None
-        # Try uuid lookup (covers contacts without phone numbers)
+        # Try Chat DB lookup by uuid
         if uuid:
             try:
                 name = Chat.objects.get(identifier=uuid).name
             except Chat.DoesNotExist:
                 pass
-        # Try number lookup (may have a better/different name)
+        # Try Chat DB lookup by number
         if number:
             try:
                 num_name = Chat.objects.get(identifier=number).name
@@ -61,7 +87,12 @@ def _resolve_members(signal_client, chat):
                     name = num_name
             except Chat.DoesNotExist:
                 pass
-        # Prefer phone number as identifier (needed for @mentions)
+        # Fallback: signal-cli's recipient table
+        if not name and uuid and uuid in signalcli_profiles:
+            profile = signalcli_profiles[uuid]
+            name = profile["name"]
+            if not number and profile.get("number"):
+                number = profile["number"]
         identifier = number or uuid
         members.append({"identifier": identifier, "name": name or "", "number": number, "uuid": uuid})
     return members
