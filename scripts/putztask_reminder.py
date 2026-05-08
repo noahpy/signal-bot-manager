@@ -2,8 +2,8 @@ import json
 from datetime import date, timedelta
 from pathlib import Path
 
+from core.models import Chat
 from core.utils import (
-    get_group_members,
     get_name,
     mention,
     send_with_mentions,
@@ -29,28 +29,26 @@ def _parse_date(date_str, year):
     return None, None
 
 
-def _match_member(name, members, log=None):
+def _match_contact(name, contacts, log=None):
     name_lower = name.lower()
     name_parts = name_lower.split()
     best = None
     best_score = -1
-    for m in members:
-        full = (get_name(m["number"]) or "").lower()
+    for c in contacts:
+        full = c.name.lower()
         if not full:
             continue
         if name_lower == full:
             if log:
-                log.info("  [debug] '%s' -> exact match: %s (%s)", name, m["number"], get_name(m["number"]))
-            return m
+                log.info("  [debug] '%s' -> exact match: %s (%s)", name, c.identifier, c.name)
+            return c
         full_parts = full.split()
-        # Check if whole name is substring of full or vice versa
         if name_lower in full or full in name_lower:
             score = len(name_lower) * 2
             if score > best_score:
                 best_score = score
-                best = m
+                best = c
             continue
-        # Check if all parts of the short name match as substrings of any full name part
         matched_parts = 0
         for np in name_parts:
             for fp in full_parts:
@@ -61,19 +59,19 @@ def _match_member(name, members, log=None):
             score = matched_parts + len(name_lower)
             if score > best_score:
                 best_score = score
-                best = m
+                best = c
     if log and best:
-        log.info("  [debug] '%s' -> best match: %s (%s)", name, best["number"], get_name(best["number"]))
+        log.info("  [debug] '%s' -> best match: %s (%s)", name, best.identifier, best.name)
     elif log:
         log.info("  [debug] '%s' -> NO MATCH FOUND", name)
     return best
 
 
-def _build_mention_message(members_to_mention, prefix):
+def _build_mention_message(contacts_to_mention, prefix):
     texts_and_builders = []
-    for m in members_to_mention:
-        display = get_name(m["number"]) or m["number"]
-        text, builder = mention(m["number"], display)
+    for c in contacts_to_mention:
+        display = c.name or c.identifier
+        text, builder = mention(c.identifier, display)
         texts_and_builders.append((text, builder))
 
     names_part = ", ".join(t for t, _ in texts_and_builders)
@@ -85,12 +83,12 @@ def _build_mention_message(members_to_mention, prefix):
     return full_msg, specs
 
 
-def _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, members, task_date, days_until, debug_log=None):
+def _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, contacts, task_date, days_until, debug_log=None):
     if assignee_name:
-        matched = _match_member(assignee_name, members, log=debug_log)
+        matched = _match_contact(assignee_name, contacts, log=debug_log)
         if matched:
-            display = get_name(matched["number"]) or assignee_name
-            text, builder = mention(matched["number"], display)
+            display = matched.name or assignee_name
+            text, builder = mention(matched.identifier, display)
             if days_until == 0:
                 msg = f"Erinnerung: {task_name} ist heute dran! Zuständig: {text}"
             else:
@@ -103,14 +101,14 @@ def _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, members,
                 msg = f"Erinnerung: {task_name} ist am {task_date.strftime('%d.%m.')} dran (in {days_until} Tagen). Zuständig: {assignee_name}"
             ctx.signal.send_to_chat(chat, msg)
     else:
-        members_to_mention = [_match_member(a, members, log=debug_log) for a in assignee_names]
-        members_to_mention = [m for m in members_to_mention if m]
+        matched_contacts = [_match_contact(a, contacts, log=debug_log) for a in assignee_names]
+        matched_contacts = [c for c in matched_contacts if c]
         if days_until == 0:
             prefix = f"Erinnerung: {task_name} ist heute dran! Zuständig: "
         else:
             prefix = f"Erinnerung: {task_name} ist am {task_date.strftime('%d.%m.')} dran (in {days_until} Tagen). Zuständig: "
-        if members_to_mention:
-            msg, specs = _build_mention_message(members_to_mention, prefix)
+        if matched_contacts:
+            msg, specs = _build_mention_message(matched_contacts, prefix)
             send_with_mentions(ctx.signal, chat, msg, specs)
         else:
             ctx.signal.send_to_chat(chat, prefix + ", ".join(assignee_names))
@@ -122,26 +120,19 @@ def run(ctx):
     debug_log = ctx.log if debug else None
 
     chat = ctx.target_chats[0]
-    members = get_group_members(ctx.signal, chat)
-    ctx.log.info("Group '%s' has %d members", chat.name, len(members))
+    contacts = list(Chat.objects.filter(chat_type=Chat.ChatType.CONTACT).exclude(name=""))
+    ctx.log.info("Loaded %d named contacts from DB for matching", len(contacts))
 
     with open(TASKS_FILE) as f:
         data = json.load(f)
 
     if debug:
-        ctx.log.info("[debug] === Raw member data (first 3) ===")
-        for m in members[:3]:
-            ctx.log.info("  [debug] raw: %s", m)
-        ctx.log.info("[debug] === Group members ===")
-        for m in members:
-            num = m.get("number") if isinstance(m, dict) else m
-            ctx.log.info("  [debug] %s -> get_name: '%s' (keys: %s)", num, get_name(num) if num else 'N/A', list(m.keys()) if isinstance(m, dict) else 'not-dict')
         all_assignees = set()
         for task in data["tasks"]:
             all_assignees.update(task["assignees"])
         ctx.log.info("[debug] === Assignee matching report ===")
         for name in sorted(all_assignees):
-            _match_member(name, members, log=ctx.log)
+            _match_contact(name, contacts, log=ctx.log)
 
     today = date.today()
     ctx.log.info("Today: %s", today.isoformat())
@@ -157,7 +148,7 @@ def run(ctx):
             if today.day != 1:
                 continue
             ctx.log.info("Task '%s' has no schedule -> monthly reminder on 1st", task_name)
-            _send_reminder(ctx, chat, task_name, None, assignee_names, members, today, 0, debug_log)
+            _send_reminder(ctx, chat, task_name, None, assignee_names, contacts, today, 0, debug_log)
             reminders_sent += 1
             continue
 
@@ -183,13 +174,13 @@ def run(ctx):
                     continue
 
                 days_until = (task_date - today).days
-                _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, members, task_date, days_until, debug_log)
+                _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, contacts, task_date, days_until, debug_log)
                 ctx.log.info("Sent reminder for '%s' (due %s, assignee=%s)", task_name, task_date, assignee_name or "all")
                 reminders_sent += 1
             else:
                 if today != date(today.year, month, 15):
                     continue
-                _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, members, today, 0, debug_log)
+                _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, contacts, today, 0, debug_log)
                 ctx.log.info("Sent monthly reminder for '%s' (month=%d, assignee=%s)", task_name, month, assignee_name or "all")
                 reminders_sent += 1
 
