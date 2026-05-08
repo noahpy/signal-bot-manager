@@ -53,7 +53,7 @@ def run(ctx):
     for mem_num in keys:
         if mem_num not in mem_numbers:
             # remove member from stats
-            del last_decider_stats_list[mem_num]
+            del last_decider_stats[mem_num]
             last_decider_stats_list = list(last_decider_stats.items())
 
 
