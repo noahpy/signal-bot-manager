@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from core.executor import execute_job
 from core.linking import get_link_state, start_linking
 from core.models import Chat, Job, JobExecution, SignalAccount
-from core.signal_client import SignalClient, SignalClientError, detect_account
+from core.signal_client import SignalClient, detect_account
 from dashboard.forms import JobForm, TriggerFormSet
 
 
@@ -153,13 +153,9 @@ _sync_state = {"running": False, "errors": []}
 
 
 def _sync_worker():
-    import logging
-    logger = logging.getLogger(__name__)
-    from core.signal_client import SignalClient
     _sync_state["errors"] = []
     client = SignalClient()
 
-    # Add "Note to Self"
     try:
         acct = SignalAccount.objects.filter(linked=True).first()
         if acct and acct.phone_number:
@@ -197,12 +193,9 @@ def _sync_worker():
         _sync_state["errors"].append(f"Contacts: {e}")
 
     try:
-        logger.info("Fetching groups...")
         groups = client.list_groups()
-        logger.info("Got %d groups", len(groups) if isinstance(groups, list) else 0)
         for g in groups:
             gid = g.get("id") or g.get("groupId")
-            logger.info("Group: name=%s id=%s", g.get("name"), gid)
             if gid:
                 Chat.objects.update_or_create(
                     identifier=gid,
@@ -212,7 +205,6 @@ def _sync_worker():
                     },
                 )
     except Exception as e:
-        logger.exception("Group sync failed")
         _sync_state["errors"].append(f"Groups: {e}")
 
     _sync_state["running"] = False
