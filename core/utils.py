@@ -12,6 +12,15 @@ Script authors can import helpers from here:
 from core.models import Chat
 
 
+def get_name(phone_number):
+    """Look up a contact's display name by phone number. Returns the number itself if not found."""
+    try:
+        chat = Chat.objects.get(identifier=phone_number)
+        return chat.name or phone_number
+    except Chat.DoesNotExist:
+        return phone_number
+
+
 def send_to_all(signal_client, chats, message, attachments=None):
     for chat in chats:
         signal_client.send_to_chat(chat, message, attachments)
