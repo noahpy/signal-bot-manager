@@ -36,6 +36,12 @@ class JobForm(forms.ModelForm):
         self.fields["message_template"].required = False
         self.fields["config_json"].required = False
 
+    def clean_config_json(self):
+        val = self.cleaned_data.get("config_json")
+        if val is None or val == "":
+            return {}
+        return val
+
 
 class TriggerForm(forms.ModelForm):
     class Meta:
