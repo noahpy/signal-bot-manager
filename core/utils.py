@@ -62,6 +62,45 @@ def get_name(phone_number):
         return phone_number
 
 
+def _lookup_signalcli_recipient(aci):
+    """Look up a recipient's profile in signal-cli's internal account.db by ACI (uuid)."""
+    import sqlite3
+    from pathlib import Path
+    from django.conf import settings
+
+    config_dir = Path(settings.SIGNAL_CLI_CONFIG) / "data"
+    if not config_dir.exists():
+        return None
+    for db_path in config_dir.glob("*.d/account.db"):
+        try:
+            conn = sqlite3.connect(str(db_path))
+            row = conn.execute(
+                "SELECT number, profile_given_name, profile_family_name FROM recipient WHERE aci = ?",
+                (aci,),
+            ).fetchone()
+            conn.close()
+            if row:
+                name = " ".join(filter(None, [row[1], row[2]])).strip()
+                return {"number": row[0], "name": name} if name else None
+        except Exception:
+            pass
+    return None
+
+
+def get_name_from_uuid(uuid):
+    """Look up a display name by UUID. Checks Chat DB first, then signal-cli's recipient DB."""
+    try:
+        chat = Chat.objects.get(identifier=uuid)
+        if chat.name:
+            return chat.name
+    except Chat.DoesNotExist:
+        pass
+    result = _lookup_signalcli_recipient(uuid)
+    if result and result["name"]:
+        return result["name"]
+    return uuid
+
+
 def send_to_all(signal_client, chats, message, attachments=None):
     for chat in chats:
         signal_client.send_to_chat(chat, message, attachments)

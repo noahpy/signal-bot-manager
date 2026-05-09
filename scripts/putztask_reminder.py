@@ -1,12 +1,10 @@
 import json
-import sqlite3
 from datetime import date, timedelta
 from pathlib import Path
 
-from django.conf import settings
-
 from core.models import Chat
 from core.utils import (
+    _lookup_signalcli_recipient,
     get_group_members,
     mention,
     send_with_mentions,
@@ -42,32 +40,9 @@ def _part_matches(query_part, full_part):
     return qp.startswith(fp) or fp.startswith(qp)
 
 
-def _get_signalcli_profiles():
-    """Read profile names from signal-cli's internal recipient table as fallback."""
-    profiles = {}
-    config_dir = Path(settings.SIGNAL_CLI_CONFIG) / "data"
-    if not config_dir.exists():
-        return profiles
-    for db_path in config_dir.glob("*.d/account.db"):
-        try:
-            conn = sqlite3.connect(str(db_path))
-            rows = conn.execute(
-                "SELECT aci, number, profile_given_name, profile_family_name FROM recipient WHERE aci IS NOT NULL"
-            ).fetchall()
-            for aci, number, given, family in rows:
-                name = " ".join(filter(None, [given, family])).strip()
-                if name:
-                    profiles[aci] = {"name": name, "number": number}
-            conn.close()
-        except Exception:
-            pass
-    return profiles
-
-
 def _resolve_members(signal_client, chat):
     """Get group members and resolve their names via Chat DB, falling back to signal-cli's recipient DB."""
     raw_members = get_group_members(signal_client, chat)
-    signalcli_profiles = _get_signalcli_profiles()
     members = []
     for m in raw_members:
         uuid = m.get("uuid")
@@ -88,11 +63,12 @@ def _resolve_members(signal_client, chat):
             except Chat.DoesNotExist:
                 pass
         # Fallback: signal-cli's recipient table
-        if not name and uuid and uuid in signalcli_profiles:
-            profile = signalcli_profiles[uuid]
-            name = profile["name"]
-            if not number and profile.get("number"):
-                number = profile["number"]
+        if not name and uuid:
+            result = _lookup_signalcli_recipient(uuid)
+            if result:
+                name = result["name"]
+                if not number and result.get("number"):
+                    number = result["number"]
         identifier = number or uuid
         members.append({"identifier": identifier, "name": name or "", "number": number, "uuid": uuid})
     return members
