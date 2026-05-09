@@ -112,54 +112,53 @@ def _is_phone(identifier):
     return identifier and identifier.startswith("+")
 
 
-def _build_mention_message(matched_members, prefix):
-    texts_and_builders = []
+def _build_mentions(members_to_mention):
+    """Build mention texts and builders for a list of members. Returns (texts, builders) lists."""
+    texts = []
+    builders = []
     plain_names = []
-    for m in matched_members:
+    for m in members_to_mention:
         display = m["name"] or m["identifier"]
         if _is_phone(m["identifier"]):
             text, builder = mention(m["identifier"], display)
-            texts_and_builders.append((text, builder))
+            texts.append(text)
+            builders.append((text, builder))
         else:
             plain_names.append(display)
-
-    all_parts = [t for t, _ in texts_and_builders] + plain_names
-    names_part = ", ".join(all_parts)
-    full_msg = prefix + names_part
-    specs = []
-    for text, builder in texts_and_builders:
-        idx = full_msg.index(text)
-        specs.append(builder(idx))
-    return full_msg, specs
+    return texts + plain_names, builders
 
 
 def _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, members, task_date, days_until, debug_log=None):
     if days_until == 0:
-        prefix = f"Erinnerung: {task_name} ist heute dran! Zuständig: "
+        timing = "die heute dran ist :)"
     else:
-        prefix = f"Erinnerung: {task_name} ist am {task_date.strftime('%d.%m.')} dran (in {days_until} Tagen). Zuständig: "
+        timing = f"die am {task_date.strftime('%d.%m.')} geplant ist (in {days_until} Tagen) :)"
 
+    # Resolve who to mention
     if assignee_name:
         matched = _match_member(assignee_name, members, log=debug_log)
-        if matched and _is_phone(matched["identifier"]):
-            display = matched["name"] or assignee_name
-            text, builder = mention(matched["identifier"], display)
-            msg = prefix + text
-            send_with_mentions(ctx.signal, chat, msg, [builder(msg.index(text))])
-        else:
-            display = matched["name"] if matched else assignee_name
-            ctx.signal.send_to_chat(chat, prefix + display)
+        to_mention = [matched] if matched else []
+        fallback_names = [assignee_name] if not matched else []
     else:
-        matched_members = [_match_member(a, members, log=debug_log) for a in assignee_names]
-        matched_members = [m for m in matched_members if m]
-        if matched_members:
-            msg, specs = _build_mention_message(matched_members, prefix)
-            if specs:
-                send_with_mentions(ctx.signal, chat, msg, specs)
-            else:
-                ctx.signal.send_to_chat(chat, msg)
+        to_mention = [m for m in (_match_member(a, members, log=debug_log) for a in assignee_names) if m]
+        fallback_names = assignee_names if not to_mention else []
+
+    if to_mention:
+        name_parts, builders = _build_mentions(to_mention)
+        names_str = ", ".join(name_parts)
+        msg = f"Hey {names_str}, eine Erinnerung für die Task \"{task_name}\" {timing}."
+        specs = []
+        for text, builder in builders:
+            idx = msg.index(text)
+            specs.append(builder(idx))
+        if specs:
+            send_with_mentions(ctx.signal, chat, msg, specs)
         else:
-            ctx.signal.send_to_chat(chat, prefix + ", ".join(assignee_names))
+            ctx.signal.send_to_chat(chat, msg)
+    else:
+        names_str = ", ".join(fallback_names)
+        msg = f"Hey {names_str}, eine Erinnerung für die Task \"{task_name}\" {timing}."
+        ctx.signal.send_to_chat(chat, msg)
 
 
 def run(ctx):
