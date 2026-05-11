@@ -61,14 +61,27 @@ def run(ctx):
     last_decider_stats_list.sort(key=lambda x: (x[1], x[0]))
 
     # filter out those who are permanently absent
-    absent_list = ctx.config['absent']
+    absent_list = ctx.config.get('absent', [])
+    override_name = ctx.config.get("override")
+
     next_decider_num = None
-    for candidate in last_decider_stats_list:
-        if (name := not_in_absent(candidate[0], absent_list)) is None:
-            continue
-        next_decider_name = name
-        next_decider_num = candidate[0]
-        break
+    if override_name:
+        override_lower = override_name.lower()
+        for num, _count in last_decider_stats_list:
+            name = get_name(num)
+            if name.lower().find(override_lower) != -1:
+                next_decider_name = name
+                next_decider_num = num
+                break
+        if next_decider_num:
+            ctx.log.info("Override: picked '%s' (%s) without incrementing counter", next_decider_name, next_decider_num)
+    else:
+        for candidate in last_decider_stats_list:
+            if (name := not_in_absent(candidate[0], absent_list)) is None:
+                continue
+            next_decider_name = name
+            next_decider_num = candidate[0]
+            break
 
     if next_decider_num is None:
         ctx.signal.send_to_chat(chat, "No one present! See you next week!")
@@ -87,7 +100,8 @@ def run(ctx):
     res = send_poll(ctx.signal, chat, "Wann KKK?", ["14.00", "14.30", "15.00", "15.30", "16.00"])
     pin_message(ctx.signal, chat, get_own_number(), res["timestamp"], 400000)
 
-    last_decider_stats[next_decider_num] += 1
+    if not override_name:
+        last_decider_stats[next_decider_num] += 1
 
     clear_name_stats = dict([(get_name(x[0]), x[1]) for x in last_decider_stats_list])
     ctx.log.info(f"Current stats: {clear_name_stats}")
