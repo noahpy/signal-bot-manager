@@ -105,7 +105,7 @@ def run(ctx):
 
     clear_name_stats = dict([(get_name(x[0]), x[1]) for x in last_decider_stats_list])
     ctx.log.info(f"Current stats: {clear_name_stats}")
-    ctx.signal.send_to_chat(chat, f"Current stats: {clear_name_stats}")
+    # ctx.signal.send_to_chat(chat, f"Current stats: {clear_name_stats}")
 
     store(NAMESPACE, LAST_DECIDER_STATS_KEY, last_decider_stats)
 
