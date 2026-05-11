@@ -62,11 +62,12 @@ def _resolve_members(signal_client, chat):
                     name = num_name
             except Chat.DoesNotExist:
                 pass
-        # Fallback: signal-cli's recipient table
-        if not name and uuid:
+        # signal-cli's recipient table: get missing name or phone number
+        if uuid and (not name or not number):
             result = _lookup_signalcli_recipient(uuid)
             if result:
-                name = result["name"]
+                if not name:
+                    name = result["name"]
                 if not number and result.get("number"):
                     number = result["number"]
         identifier = number or uuid
@@ -188,11 +189,21 @@ def run(ctx):
     ctx.log.info("Today: %s", today.isoformat())
     reminders_sent = 0
 
+    weekday_map = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6}
+
     for task in data["tasks"]:
         task_name = task["task"]
         assignee_names = task["assignees"]
         schedule = task.get("schedule", [])
-        is_tafel = task_name.lower() == "tafel"
+
+        weekday = task.get("weekday")
+        if weekday:
+            target_day = weekday_map.get(weekday.lower())
+            if target_day is not None and today.weekday() == target_day:
+                ctx.log.info("Task '%s' -> weekly %s reminder", task_name, weekday)
+                _send_reminder(ctx, chat, task_name, None, assignee_names, members, today, 0, debug_log)
+                reminders_sent += 1
+            continue
 
         if not schedule:
             if today.day != 1:
@@ -201,6 +212,8 @@ def run(ctx):
             _send_reminder(ctx, chat, task_name, None, assignee_names, members, today, 0, debug_log)
             reminders_sent += 1
             continue
+
+        is_tafel = task_name.lower() == "tafel"
 
         for entry in schedule:
             month, day = _parse_date(entry["date"], today.year)
