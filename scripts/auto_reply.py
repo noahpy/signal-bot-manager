@@ -24,6 +24,12 @@ WILL_NICHT_RESPONSES = [
     "Wollen ist Freiheit, so aber nicht die Flur-Tasks - Martin",
     "Wenn Freiheit überhaupt etwas bedeutet, dann das Recht, anderen Leuten auf ihre Flurtasks aufmerksam zu machen.",
     "Die einzige Möglichkeit, großartige Arbeit zu leisten, ist zu tun, was einem zugeteilt wurde.",
+    "Wille ist nicht das was den Flur sauber hält - es sind die Tasks.",
+    "Schopenhauer besagt: Der Mensch kann tun, was er will, aber er kann nicht wollen, was er will. Doch er kann immer noch tun, was er nicht will.",
+    "Wo ein Wille ist, ist auch ein Weg. Wo kein Wille ist, ist auch ein Weg aber es gibt Kuchen.",
+    "Der Wille gestaltet den Menschen, zum Erfolg braucht er jedoch Mut, Ausdauer und das Erledigen seiner Tasks.",
+    "Pessimismus ist Sache des Gemüts, Optimismus Willenssache.",
+    "Unser Flur ist unser Garten, und unser Wille der Gärtner - aber der Gärtner steht under Festanstellung."
 ]
 
 
