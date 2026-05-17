@@ -43,12 +43,15 @@ def _handle_notification(msg):
     text = None
     sender = None
     group_id = None
+    timestamp = envelope.get("timestamp")
 
     data_message = envelope.get("dataMessage")
     if data_message and data_message.get("message"):
         text = data_message["message"]
         sender = source
         group_id = (data_message.get("groupInfo") or {}).get("groupId")
+        if data_message.get("timestamp"):
+            timestamp = data_message["timestamp"]
 
     if not text:
         sync = envelope.get("syncMessage")
@@ -59,15 +62,17 @@ def _handle_notification(msg):
                 sender = source
                 group_info = sent.get("groupInfo") or {}
                 group_id = group_info.get("groupId")
+                if sent.get("timestamp"):
+                    timestamp = sent["timestamp"]
 
     if not text:
         return
 
     logger.info("Message: sender=%s group=%s text=%s", sender, group_id, text[:80])
-    _match_triggers(text, sender, group_id)
+    _match_triggers(text, sender, group_id, timestamp)
 
 
-def _match_triggers(text, sender, group_id):
+def _match_triggers(text, sender, group_id, timestamp=None):
     triggers = Trigger.objects.filter(
         trigger_type=Trigger.TriggerType.MESSAGE,
         enabled=True,
@@ -92,5 +97,10 @@ def _match_triggers(text, sender, group_id):
         execute_job(
             trigger.job_id,
             trigger_id=trigger.id,
-            trigger_context={"sender": sender, "message": text, "group": group_id},
+            trigger_context={
+                "sender": sender,
+                "message": text,
+                "group": group_id,
+                "timestamp": timestamp,
+            },
         )

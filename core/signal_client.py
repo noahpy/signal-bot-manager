@@ -147,3 +147,25 @@ class SignalClient:
             targetAuthor=target_author,
             targetTimestamp=target_timestamp,
         )
+
+    def send_quote(self, recipient, message, quote_timestamp, quote_author, attachments=None):
+        params = {
+            "recipient": [recipient],
+            "message": message,
+            "quoteTimestamp": quote_timestamp,
+            "quoteAuthor": quote_author,
+        }
+        if attachments:
+            params["attachment"] = attachments
+        return self._call("send", timeout=30, **params)
+
+    def send_group_quote(self, group_id, message, quote_timestamp, quote_author, attachments=None):
+        params = {
+            "groupId": group_id,
+            "message": message,
+            "quoteTimestamp": quote_timestamp,
+            "quoteAuthor": quote_author,
+        }
+        if attachments:
+            params["attachment"] = attachments
+        return self._call("send", timeout=30, **params)

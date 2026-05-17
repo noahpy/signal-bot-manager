@@ -6,6 +6,7 @@ Script authors can import helpers from here:
         send_poll, get_group_members,
         mention, send_with_mentions,
         pin_message, unpin_message,
+        reply,
     )
 """
 
@@ -186,6 +187,21 @@ def unpin_message(signal_client, chat, target_author, target_timestamp):
         )
     return signal_client.unpin_message(
         chat.identifier, target_author, target_timestamp
+    )
+
+
+def reply(signal_client, chat, message, trigger_context, attachments=None):
+    """Quote-reply to the message that triggered this job."""
+    timestamp = trigger_context.get("timestamp")
+    sender = trigger_context.get("sender")
+    if not timestamp or not sender:
+        return signal_client.send_to_chat(chat, message, attachments)
+    if chat.chat_type == Chat.ChatType.GROUP:
+        return signal_client.send_group_quote(
+            chat.identifier, message, timestamp, sender, attachments
+        )
+    return signal_client.send_quote(
+        chat.identifier, message, timestamp, sender, attachments
     )
 
 
