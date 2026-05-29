@@ -11,11 +11,13 @@ from core.utils import (
     get_name,
     load,
     store,
+    delete,
     get_own_number
 )
 
 NAMESPACE = "kkk-weekly"
 LAST_DECIDER_STATS_KEY = "last-decider-stats"
+OVERRIDE_KEY = "next-override"
 
 def not_in_absent(number, absents) -> str | None:
     name = get_name(number)
@@ -64,8 +66,18 @@ def run(ctx):
     absent_list = ctx.config.get('absent', [])
     override_name = ctx.config.get("override")
 
+    # check for temporal override (set via !kkk override)
+    temporal_override = load(NAMESPACE, OVERRIDE_KEY)
+    increment_counter = True
+
     next_decider_num = None
-    if override_name:
+    if temporal_override:
+        next_decider_num = temporal_override["number"]
+        next_decider_name = temporal_override["name"]
+        increment_counter = temporal_override.get("counts", True)
+        ctx.log.info("Temporal override: picked '%s' (%s), counts=%s", next_decider_name, next_decider_num, increment_counter)
+        delete(NAMESPACE, OVERRIDE_KEY)
+    elif override_name:
         override_lower = override_name.lower()
         for num, _count in last_decider_stats_list:
             name = get_name(num)
@@ -74,7 +86,8 @@ def run(ctx):
                 next_decider_num = num
                 break
         if next_decider_num:
-            ctx.log.info("Override: picked '%s' (%s) without incrementing counter", next_decider_name, next_decider_num)
+            increment_counter = False
+            ctx.log.info("Config override: picked '%s' (%s) without incrementing counter", next_decider_name, next_decider_num)
     else:
         for candidate in last_decider_stats_list:
             if (name := not_in_absent(candidate[0], absent_list)) is None:
@@ -100,7 +113,7 @@ def run(ctx):
     res = send_poll(ctx.signal, chat, "Wann KKK?", ["14.00", "14.30", "15.00", "15.30", "16.00"])
     pin_message(ctx.signal, chat, get_own_number(), res["timestamp"], 400000)
 
-    if not override_name:
+    if increment_counter:
         last_decider_stats[next_decider_num] += 1
 
     clear_name_stats = dict([(get_name(x[0]), x[1]) for x in last_decider_stats_list])
