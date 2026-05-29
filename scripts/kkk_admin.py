@@ -78,11 +78,11 @@ def _build_histogram(stats):
 
 
 def _forecast_next(stats, absent_list):
-    from scripts import kaffee_kuchen
     stats_list = sorted(stats.items(), key=lambda x: (x[1], x[0]))
     for num, _count in stats_list:
-        if kaffee_kuchen.not_in_absent(num, absent_list) is not None:
-            return get_name(num)
+        name = get_name(num)
+        if all(name.lower().find(a.lower()) == -1 for a in absent_list):
+            return name
     return None
 
 
