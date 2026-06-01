@@ -13,7 +13,7 @@ NAMESPACE = "kkk-weekly"
 LAST_DECIDER_STATS_KEY = "last-decider-stats"
 OVERRIDE_KEY = "next-override"
 
-ADMIN_NAMES = ["noah", "fabian"]
+ADMIN_NAMES = ["noah"]
 
 HELP_TEXT = (
     "KKK Bot Befehle:\n"
