@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 RESTART_DELAY_MIN = 5
 RESTART_DELAY_MAX = 300
+# detect_account() boots a JVM, so poll for an account slowly while unlinked.
+NO_ACCOUNT_DELAY = 60
 
 
 def listener_loop():
@@ -23,11 +25,11 @@ def listener_loop():
                 phone = detect_account()
                 if not phone:
                     logger.info("No linked account, waiting...")
-                    time.sleep(10)
+                    time.sleep(NO_ACCOUNT_DELAY)
                     continue
                 acct = SignalAccount.objects.filter(linked=True).first()
                 if not acct or not acct.phone_number:
-                    time.sleep(10)
+                    time.sleep(NO_ACCOUNT_DELAY)
                     continue
 
             from core import jsonrpc
