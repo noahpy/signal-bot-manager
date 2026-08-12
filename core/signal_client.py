@@ -1,7 +1,10 @@
+import logging
 import re
 import subprocess
 
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 class SignalClientError(Exception):
@@ -69,6 +72,7 @@ class SignalClient:
             result = self._call("listGroups", timeout=120)
             return result if isinstance(result, list) else []
         except Exception:
+            logger.warning("listGroups failed, returning no groups", exc_info=True)
             return []
 
     def list_contacts(self):
@@ -76,6 +80,7 @@ class SignalClient:
             result = self._call("listContacts", timeout=60)
             return result if isinstance(result, list) else []
         except Exception:
+            logger.warning("listContacts failed, returning no contacts", exc_info=True)
             return []
 
     def get_group_members(self, group_id):

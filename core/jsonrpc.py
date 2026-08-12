@@ -1,3 +1,4 @@
+import collections
 import json
 import logging
 import subprocess
@@ -13,12 +14,15 @@ _id_counter = 0
 _pending = {}
 _pending_lock = threading.Lock()
 _read_thread = None
+_err_thread = None
 _on_notification = None
+_stderr_lines = collections.deque(maxlen=20)
 
 
 def start(account, on_notification=None):
-    global _process, _read_thread, _on_notification
+    global _process, _read_thread, _err_thread, _on_notification
     _on_notification = on_notification
+    _stderr_lines.clear()
 
     cmd = [
         settings.SIGNAL_CLI_PATH,
@@ -40,6 +44,12 @@ def start(account, on_notification=None):
     )
     _read_thread = threading.Thread(target=_reader_loop, daemon=True)
     _read_thread.start()
+    _err_thread = threading.Thread(target=_stderr_loop, daemon=True)
+    _err_thread.start()
+
+
+def last_stderr():
+    return "\n".join(_stderr_lines)
 
 
 def is_running():
@@ -123,3 +133,13 @@ def _reader_loop():
                     logger.exception("Error handling notification")
 
     logger.warning("jsonRpc reader loop ended (process exited)")
+
+
+def _stderr_loop():
+    proc = _process
+    for line in proc.stderr:
+        line = line.strip()
+        if not line:
+            continue
+        _stderr_lines.append(line)
+        logger.warning("signal-cli: %s", line)
