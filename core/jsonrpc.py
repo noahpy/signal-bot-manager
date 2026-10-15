@@ -31,7 +31,9 @@ def start(account, on_notification=None):
         "--trust-new-identities", "always",
         "--output=json",
         "jsonRpc",
+        "--ignore-attachments",
         "--ignore-avatars",
+        "--ignore-stickers",
         "--ignore-stories",
     ]
     logger.info("Starting shared jsonRpc process: %s", " ".join(cmd))

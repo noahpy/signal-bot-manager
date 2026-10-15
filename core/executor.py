@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from django.conf import settings
 from django.utils import timezone
 
+from core.alerts import send_alert
 from core.models import Chat, Job, JobExecution, Trigger
 from core.signal_client import SignalClient
 
@@ -60,12 +61,18 @@ def _run_job(job_id, trigger_id, trigger_context):
         execution.status = JobExecution.Status.FAILED
         execution.error_message = traceback.format_exc()
         job_logger.error("Job failed: %s", e)
+        send_alert(
+            f"Job '{job.name}' (#{job.id}) failed: {type(e).__name__}: {e}",
+            key=f"job-{job.id}:{type(e).__name__}:{e}",
+        )
     finally:
         execution.finished_at = timezone.now()
         execution.duration_ms = int(
             (execution.finished_at - execution.started_at).total_seconds() * 1000
         )
         execution.log_output = log_stream.getvalue()
+        # Don't keep the triggering Signal message around once the job is done.
+        execution.trigger_context = {}
         execution.save()
         job_logger.removeHandler(handler)
 

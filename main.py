@@ -25,7 +25,21 @@ def run_listener():
     listener_loop()
 
 
+def run_cleanup():
+    from core.cleanup import cleanup_loop
+    cleanup_loop()
+
+
+def run_alerts():
+    from core.alerts import alert_loop
+    alert_loop()
+
+
 def main():
+    import logging
+    from core.alerts import AlertHandler
+    logging.getLogger().addHandler(AlertHandler())
+
     threads = []
 
     def shutdown(signum, frame):
@@ -40,6 +54,8 @@ def main():
         ("django", run_django),
         ("scheduler", run_scheduler),
         ("listener", run_listener),
+        ("cleanup", run_cleanup),
+        ("alerts", run_alerts),
     ]:
         t = threading.Thread(target=target, name=name, daemon=True)
         t.start()

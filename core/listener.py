@@ -2,6 +2,7 @@ import logging
 import re
 import time
 
+from core.alerts import send_alert
 from core.executor import execute_job
 from core.models import SignalAccount, Trigger
 
@@ -55,6 +56,11 @@ def listener_loop():
 
             if uptime > 60:
                 restart_delay = RESTART_DELAY_MIN
+            send_alert(
+                f"signal-cli died after {uptime:.0f}s, restarting in {restart_delay}s\n"
+                + "\n".join(stderr.splitlines()[-5:]),
+                key="jsonrpc-died",
+            )
             logger.warning(
                 "jsonRpc process died after %.0fs, restarting in %ds... %s",
                 uptime, restart_delay, stderr,
