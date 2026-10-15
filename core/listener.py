@@ -13,6 +13,9 @@ RESTART_DELAY_MIN = 5
 RESTART_DELAY_MAX = 300
 # detect_account() boots a JVM, so poll for an account slowly while unlinked.
 NO_ACCOUNT_DELAY = 60
+# Messages older than this (e.g. a backlog delivered after downtime) are not
+# matched against triggers, so the bot doesn't answer stale messages.
+MAX_MESSAGE_AGE = 5 * 60
 
 
 def listener_loop():
@@ -105,6 +108,8 @@ def _handle_notification(msg):
         return
 
     logger.info("Message: sender=%s group=%s text=%s", sender, group_id, text[:80])
+    if timestamp and time.time() - timestamp / 1000 > MAX_MESSAGE_AGE:
+        return
     _match_triggers(text, sender, group_id, timestamp)
 
 
