@@ -132,7 +132,7 @@ def send_poll(signal_client, chat, question, options, single_choice=False):
     )
 
 
-def mention(phone_number, display_text=None):
+def mention(recipient, display_text=None):
     """Build a mention placeholder and spec for use with send_with_mentions().
 
     Returns (placeholder_text, mention_spec_builder) where placeholder_text
@@ -149,7 +149,7 @@ def mention(phone_number, display_text=None):
     length = len(placeholder.encode("utf-16-le")) // 2
 
     def build(start_position):
-        return f"{start_position}:{length}:{phone_number}"
+        return f"{start_position}:{length}:{recipient}"
 
     return placeholder, build
 
@@ -157,7 +157,8 @@ def mention(phone_number, display_text=None):
 def send_with_mentions(signal_client, chat, message, mention_specs, attachments=None):
     """Send a message with @mentions.
 
-    mention_specs: list of "start:length:phone" strings (use mention() helper to build these)
+    mention_specs: list of "start:length:recipient" strings (recipient = phone number or UUID;
+    use mention() helper to build these)
     """
     if chat.chat_type == Chat.ChatType.GROUP:
         return signal_client.send_group_with_mention(

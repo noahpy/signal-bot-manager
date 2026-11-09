@@ -109,10 +109,6 @@ def _match_member(name, members, log=None):
     return best
 
 
-def _is_phone(identifier):
-    return identifier and identifier.startswith("+")
-
-
 def _build_mentions(members_to_mention):
     """Build mention texts and builders for a list of members. Returns (texts, builders) lists."""
     texts = []
@@ -120,8 +116,10 @@ def _build_mentions(members_to_mention):
     plain_names = []
     for m in members_to_mention:
         display = m["name"] or m["identifier"]
-        if _is_phone(m["identifier"]):
-            text, builder = mention(m["identifier"], display)
+        # signal-cli accepts either a UUID or a phone number as mention target.
+        target = m.get("uuid") or m.get("number")
+        if target:
+            text, builder = mention(target, display)
             texts.append(text)
             builders.append((text, builder))
         else:
