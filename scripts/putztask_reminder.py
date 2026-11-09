@@ -128,10 +128,13 @@ def _build_mentions(members_to_mention):
 
 
 def _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, members, task_date, days_until, debug_log=None):
-    if days_until == 0:
+    if days_until < 0:
+        timing = f"die seit dem {task_date.strftime('%d.%m.')} ansteht :)"
+    elif days_until == 0:
         timing = "die heute dran ist :)"
     else:
-        timing = f"die am {task_date.strftime('%d.%m.')} geplant ist (in {days_until} Tagen) :)"
+        tage = "Tag" if days_until == 1 else "Tagen"
+        timing = f"die am {task_date.strftime('%d.%m.')} geplant ist (in {days_until} {tage}) :)"
 
     # Resolve who to mention
     if assignee_name:
@@ -164,6 +167,8 @@ def run(ctx):
     ctx.log.info("=== Putztask Reminder ===")
     debug = ctx.config.get("debug", False)
     debug_log = ctx.log if debug else None
+    # last_week: resend the dated reminders that were due in the past 7 days (excluding today).
+    last_week = ctx.config.get("last_week", False)
 
     chat = ctx.target_chats[0]
     members = _resolve_members(ctx.signal, chat)
@@ -185,6 +190,9 @@ def run(ctx):
 
     today = date.today()
     ctx.log.info("Today: %s", today.isoformat())
+    if last_week:
+        window_start = today - timedelta(days=7)
+        ctx.log.info("Last-week mode: resending dated reminders due %s .. %s", window_start, today - timedelta(days=1))
     reminders_sent = 0
 
     weekday_map = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6}
@@ -195,6 +203,9 @@ def run(ctx):
         schedule = task.get("schedule", [])
 
         weekday = task.get("weekday")
+        if last_week and (weekday or not schedule):
+            # Weekly and monthly-on-the-1st reminders aren't tied to a specific due date; skip.
+            continue
         if weekday:
             target_day = weekday_map.get(weekday.lower())
             if target_day is not None and today.weekday() == target_day:
@@ -222,14 +233,16 @@ def run(ctx):
 
             if day is not None:
                 lead = timedelta(days=0 if is_tafel else 4)
-                # Check next year too, so early-January dates fire from late December.
+                # Check adjacent years too, so reminders work across the year boundary.
                 task_date = None
-                for year in (today.year, today.year + 1):
+                for year in (today.year - 1, today.year, today.year + 1):
                     try:
                         candidate = date(year, month, day)
                     except ValueError:
                         continue
-                    if candidate - lead == today:
+                    remind_date = candidate - lead
+                    due = window_start <= remind_date < today if last_week else remind_date == today
+                    if due:
                         task_date = candidate
                         break
                 if task_date is None:
@@ -240,7 +253,7 @@ def run(ctx):
                 ctx.log.info("Sent reminder for '%s' (due %s, assignee=%s)", task_name, task_date, assignee_name or "all")
                 reminders_sent += 1
             else:
-                if today != date(today.year, month, 15):
+                if last_week or today != date(today.year, month, 15):
                     continue
                 _send_reminder(ctx, chat, task_name, assignee_name, assignee_names, members, today, 0, debug_log)
                 ctx.log.info("Sent monthly reminder for '%s' (month=%d, assignee=%s)", task_name, month, assignee_name or "all")
