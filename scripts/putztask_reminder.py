@@ -223,17 +223,18 @@ def run(ctx):
             assignee_name = entry.get("assignee")
 
             if day is not None:
-                try:
-                    task_date = date(today.year, month, day)
-                except ValueError:
-                    continue
-
-                if is_tafel:
-                    remind_date = task_date
-                else:
-                    remind_date = task_date - timedelta(days=4)
-
-                if today != remind_date:
+                lead = timedelta(days=0 if is_tafel else 4)
+                # Check next year too, so early-January dates fire from late December.
+                task_date = None
+                for year in (today.year, today.year + 1):
+                    try:
+                        candidate = date(year, month, day)
+                    except ValueError:
+                        continue
+                    if candidate - lead == today:
+                        task_date = candidate
+                        break
+                if task_date is None:
                     continue
 
                 days_until = (task_date - today).days

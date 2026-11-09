@@ -1,188 +1,649 @@
 {
   "tasks": [
     {
-      "task": "Duschabfluss",
-      "assignees": ["Max", "Donatella", "Pavel"],
+      "task": "Staubsaugbeutel entleeren",
+      "assignees": [
+        "Leon",
+        "Lilli"
+      ],
       "schedule": [
-        { "date": "04.05", "assignee": "Max" },
-        { "date": "18.05", "assignee": "Donatella" },
-        { "date": "01.06", "assignee": "Pavel" },
-        { "date": "15.06", "assignee": "Max" },
-        { "date": "29.06", "assignee": "Donatella" },
-        { "date": "06.07", "assignee": "Pavel" },
-        { "date": "20.07", "assignee": "Max" },
-        { "date": "03.08", "assignee": "Donatella" },
-        { "date": "17.08", "assignee": "Pavel" },
-        { "date": "31.08", "assignee": "Max" },
-        { "date": "07.09", "assignee": "Donatella" },
-        { "date": "21.09", "assignee": "Pavel" }
-      ]
-    },
-    {
-      "task": "Tafel",
-      "assignees": ["Sophia", "Lisa B."],
-      "weekday": "thursday"
-    },
-    {
-      "task": "Toilettenpapier",
-      "assignees": ["Lisa T.", "Marie Sch."],
-      "schedule": [
-        { "date": "04.05" },
-        { "date": "11.05" },
-        { "date": "18.05" },
-        { "date": "25.05" },
-        { "date": "01.06" },
-        { "date": "08.06" },
-        { "date": "15.06" },
-        { "date": "22.06" },
-        { "date": "29.06" },
-        { "date": "06.07" },
-        { "date": "13.07" },
-        { "date": "20.07" },
-        { "date": "27.07" },
-        { "date": "03.08" },
-        { "date": "10.08" },
-        { "date": "17.08" },
-        { "date": "24.08" },
-        { "date": "31.08" },
-        { "date": "07.09" },
-        { "date": "14.09" },
-        { "date": "21.09" },
-        { "date": "28.09" },
-        { "date": "05.10" },
-        { "date": "12.10" },
-        { "date": "19.10" }
-      ]
-    },
-    {
-      "task": "Sonstige Mülleimer leeren",
-      "assignees": ["Sofiia", "Xaver"],
-      "schedule": [
-        { "date": "Mai", "assignee": "Sofiia" },
-        { "date": "Juni", "assignee": "Xaver" },
-        { "date": "Juli", "assignee": "Sofiia" },
-        { "date": "August", "assignee": "Xaver" },
-        { "date": "September", "assignee": "Sofiia" },
-        { "date": "Oktober", "assignee": "Xaver" }
-      ]
-    },
-    {
-      "task": "Staubsauger reinigen",
-      "assignees": ["Flo"],
-      "schedule": [
-        { "date": "Mai", "assignee": "Flo" },
-        { "date": "Juni", "assignee": "Flo" },
-        { "date": "Juli", "assignee": "Flo" },
-        { "date": "August", "assignee": "Flo" },
-        { "date": "September", "assignee": "Flo" },
-        { "date": "Oktober", "assignee": "Flo" }
-      ]
-    },
-    {
-      "task": "Wohnzimmer saugen",
-      "assignees": ["Marcel S.", "Marlene", "Båndu"],
-      "schedule": [
-        { "date": "04.05", "assignee": "Marcel S." },
-        { "date": "18.05", "assignee": "Marlene" },
-        { "date": "01.06", "assignee": "Båndu" },
-        { "date": "15.06", "assignee": "Marcel S." },
-        { "date": "29.06", "assignee": "Marlene" },
-        { "date": "06.07", "assignee": "Båndu" },
-        { "date": "20.07", "assignee": "Marcel S." },
-        { "date": "03.08", "assignee": "Marlene" },
-        { "date": "17.08", "assignee": "Båndu" },
-        { "date": "31.08", "assignee": "Marcel S." },
-        { "date": "07.09", "assignee": "Marlene" },
-        { "date": "21.09", "assignee": "Båndu" }
-      ]
-    },
-    {
-      "task": "Gefrierschränke",
-      "assignees": ["Myroslava", "Ruslan"],
-      "schedule": [
-        { "date": "Mai", "assignee": "Myroslava" },
-        { "date": "Juli", "assignee": "Ruslan" }
-      ]
-    },
-    {
-      "task": "Toaster",
-      "assignees": ["Båndu", "Leon"],
-      "schedule": [
-        { "date": "04.05", "assignee": "Båndu" },
-        { "date": "18.05", "assignee": "Leon" },
-        { "date": "01.06", "assignee": "Båndu" },
-        { "date": "15.06", "assignee": "Leon" },
-        { "date": "29.06", "assignee": "Båndu" },
-        { "date": "06.07", "assignee": "Leon" },
-        { "date": "20.07", "assignee": "Båndu" },
-        { "date": "03.08", "assignee": "Leon" },
-        { "date": "17.08", "assignee": "Båndu" },
-        { "date": "31.08", "assignee": "Leon" },
-        { "date": "07.09", "assignee": "Båndu" },
-        { "date": "21.09", "assignee": "Leon" }
+        {
+          "date": "09.11",
+          "assignee": "Leon"
+        },
+        {
+          "date": "23.11",
+          "assignee": "Lilli"
+        },
+        {
+          "date": "07.12",
+          "assignee": "Leon"
+        },
+        {
+          "date": "21.12",
+          "assignee": "Lilli"
+        },
+        {
+          "date": "04.01",
+          "assignee": "Leon"
+        },
+        {
+          "date": "18.01",
+          "assignee": "Lilli"
+        },
+        {
+          "date": "01.02",
+          "assignee": "Leon"
+        },
+        {
+          "date": "15.02",
+          "assignee": "Lilli"
+        },
+        {
+          "date": "01.03",
+          "assignee": "Leon"
+        },
+        {
+          "date": "15.03",
+          "assignee": "Lilli"
+        },
+        {
+          "date": "29.03",
+          "assignee": "Leon"
+        }
       ]
     },
     {
       "task": "Mikrowelle",
-      "assignees": ["Max", "Chiaki"],
+      "assignees": [
+        "Adi",
+        "Pavel"
+      ],
       "schedule": [
-        { "date": "04.05", "assignee": "Max" },
-        { "date": "18.05", "assignee": "Chiaki" },
-        { "date": "01.06", "assignee": "Max" },
-        { "date": "15.06", "assignee": "Chiaki" },
-        { "date": "29.06", "assignee": "Max" },
-        { "date": "06.07", "assignee": "Chiaki" },
-        { "date": "20.07", "assignee": "Max" },
-        { "date": "03.08", "assignee": "Chiaki" },
-        { "date": "17.08", "assignee": "Max" },
-        { "date": "31.08", "assignee": "Chiaki" },
-        { "date": "07.09", "assignee": "Max" },
-        { "date": "21.09", "assignee": "Chiaki" }
+        {
+          "date": "09.11",
+          "assignee": "Adi"
+        },
+        {
+          "date": "23.11",
+          "assignee": "Pavel"
+        },
+        {
+          "date": "07.12",
+          "assignee": "Adi"
+        },
+        {
+          "date": "21.12",
+          "assignee": "Pavel"
+        },
+        {
+          "date": "04.01",
+          "assignee": "Adi"
+        },
+        {
+          "date": "18.01",
+          "assignee": "Pavel"
+        },
+        {
+          "date": "01.02",
+          "assignee": "Adi"
+        },
+        {
+          "date": "15.02",
+          "assignee": "Pavel"
+        },
+        {
+          "date": "01.03",
+          "assignee": "Adi"
+        },
+        {
+          "date": "15.03",
+          "assignee": "Pavel"
+        },
+        {
+          "date": "29.03",
+          "assignee": "Adi"
+        }
+      ]
+    },
+    {
+      "task": "Gefrierschränke",
+      "assignees": [
+        "Sabri",
+        "Telli"
+      ],
+      "schedule": [
+        {
+          "date": "Dezember",
+          "assignee": "Sabri"
+        },
+        {
+          "date": "Februar",
+          "assignee": "Telli"
+        }
       ]
     },
     {
       "task": "Ofen putzen",
-      "assignees": ["Jakob", "Henri"],
+      "assignees": [
+        "Johannes",
+        "Kenneth"
+      ],
       "schedule": [
-        { "date": "04.05", "assignee": "Jakob" },
-        { "date": "18.05", "assignee": "Henri" },
-        { "date": "01.06", "assignee": "Jakob" },
-        { "date": "15.06", "assignee": "Henri" },
-        { "date": "29.06", "assignee": "Jakob" },
-        { "date": "06.07", "assignee": "Henri" },
-        { "date": "20.07", "assignee": "Jakob" },
-        { "date": "03.08", "assignee": "Henri" },
-        { "date": "17.08", "assignee": "Jakob" },
-        { "date": "31.08", "assignee": "Henri" },
-        { "date": "07.09", "assignee": "Jakob" },
-        { "date": "21.09", "assignee": "Henri" }
+        {
+          "date": "09.11",
+          "assignee": "Johannes"
+        },
+        {
+          "date": "23.11",
+          "assignee": "Kenneth"
+        },
+        {
+          "date": "07.12",
+          "assignee": "Johannes"
+        },
+        {
+          "date": "21.12",
+          "assignee": "Kenneth"
+        },
+        {
+          "date": "04.01",
+          "assignee": "Johannes"
+        },
+        {
+          "date": "18.01",
+          "assignee": "Kenneth"
+        },
+        {
+          "date": "01.02",
+          "assignee": "Johannes"
+        },
+        {
+          "date": "15.02",
+          "assignee": "Kenneth"
+        },
+        {
+          "date": "01.03",
+          "assignee": "Johannes"
+        },
+        {
+          "date": "15.03",
+          "assignee": "Kenneth"
+        },
+        {
+          "date": "29.03",
+          "assignee": "Johannes"
+        }
+      ]
+    },
+    {
+      "task": "Toaster",
+      "assignees": [
+        "Henri",
+        "Adi"
+      ],
+      "schedule": [
+        {
+          "date": "09.11",
+          "assignee": "Henri"
+        },
+        {
+          "date": "23.11",
+          "assignee": "Adi"
+        },
+        {
+          "date": "07.12",
+          "assignee": "Henri"
+        },
+        {
+          "date": "21.12",
+          "assignee": "Adi"
+        },
+        {
+          "date": "04.01",
+          "assignee": "Henri"
+        },
+        {
+          "date": "18.01",
+          "assignee": "Adi"
+        },
+        {
+          "date": "01.02",
+          "assignee": "Henri"
+        },
+        {
+          "date": "15.02",
+          "assignee": "Adi"
+        },
+        {
+          "date": "01.03",
+          "assignee": "Henri"
+        },
+        {
+          "date": "15.03",
+          "assignee": "Adi"
+        },
+        {
+          "date": "29.03",
+          "assignee": "Henri"
+        }
+      ]
+    },
+    {
+      "task": "Duschabfluss",
+      "assignees": [
+        "Noemi",
+        "Paula",
+        "Noah"
+      ],
+      "schedule": [
+        {
+          "date": "09.11",
+          "assignee": "Noemi"
+        },
+        {
+          "date": "23.11",
+          "assignee": "Paula"
+        },
+        {
+          "date": "07.12",
+          "assignee": "Noah"
+        },
+        {
+          "date": "21.12",
+          "assignee": "Noemi"
+        },
+        {
+          "date": "04.01",
+          "assignee": "Paula"
+        },
+        {
+          "date": "18.01",
+          "assignee": "Noah"
+        },
+        {
+          "date": "01.02",
+          "assignee": "Noemi"
+        },
+        {
+          "date": "15.02",
+          "assignee": "Paula"
+        },
+        {
+          "date": "01.03",
+          "assignee": "Noah"
+        },
+        {
+          "date": "15.03",
+          "assignee": "Noemi"
+        },
+        {
+          "date": "29.03",
+          "assignee": "Paula"
+        }
       ]
     },
     {
       "task": "Schneidebrett desinfizieren",
-      "assignees": ["Marie Stock", "Sofiia"],
+      "assignees": [
+        "Lilli",
+        "Marcel S."
+      ],
       "schedule": [
-        { "date": "November", "assignee": "Marie Stock" },
-        { "date": "Dezember", "assignee": "Sofiia" },
-        { "date": "Januar", "assignee": "Marie Stock" },
-        { "date": "Februar", "assignee": "Sofiia" },
-        { "date": "März", "assignee": "Marie Stock" },
-        { "date": "April", "assignee": "Sofiia" }
+        {
+          "date": "November",
+          "assignee": "Lilli"
+        },
+        {
+          "date": "Dezember",
+          "assignee": "Marcel S."
+        },
+        {
+          "date": "Januar",
+          "assignee": "Lilli"
+        },
+        {
+          "date": "Februar",
+          "assignee": "Marcel S."
+        },
+        {
+          "date": "März",
+          "assignee": "Lilli"
+        },
+        {
+          "date": "April",
+          "assignee": "Marcel S."
+        }
+      ]
+    },
+    {
+      "task": "Papier, Plastik, Glas, Restmüll reinigen",
+      "assignees": [
+        "Flo",
+        "Maja"
+      ],
+      "schedule": [
+        {
+          "date": "November",
+          "assignee": "Flo"
+        },
+        {
+          "date": "Dezember",
+          "assignee": "Maja"
+        },
+        {
+          "date": "Januar",
+          "assignee": "Flo"
+        },
+        {
+          "date": "Februar",
+          "assignee": "Maja"
+        },
+        {
+          "date": "März",
+          "assignee": "Flo"
+        },
+        {
+          "date": "April",
+          "assignee": "Maja"
+        }
+      ]
+    },
+    {
+      "task": "Bio- und Restmüll reinigen",
+      "assignees": [
+        "Sofiia",
+        "Rafaela",
+        "Lisa B."
+      ],
+      "schedule": [
+        {
+          "date": "09.11",
+          "assignee": "Sofiia"
+        },
+        {
+          "date": "16.11",
+          "assignee": "Rafaela"
+        },
+        {
+          "date": "23.11",
+          "assignee": "Lisa B."
+        },
+        {
+          "date": "30.11",
+          "assignee": "Sofiia"
+        },
+        {
+          "date": "07.12",
+          "assignee": "Rafaela"
+        },
+        {
+          "date": "14.12",
+          "assignee": "Lisa B."
+        },
+        {
+          "date": "21.12",
+          "assignee": "Sofiia"
+        },
+        {
+          "date": "28.12",
+          "assignee": "Rafaela"
+        },
+        {
+          "date": "04.01",
+          "assignee": "Lisa B."
+        },
+        {
+          "date": "11.01",
+          "assignee": "Sofiia"
+        },
+        {
+          "date": "18.01",
+          "assignee": "Rafaela"
+        },
+        {
+          "date": "25.01",
+          "assignee": "Lisa B."
+        },
+        {
+          "date": "01.02",
+          "assignee": "Sofiia"
+        },
+        {
+          "date": "08.02",
+          "assignee": "Rafaela"
+        },
+        {
+          "date": "15.02",
+          "assignee": "Lisa B."
+        },
+        {
+          "date": "22.02",
+          "assignee": "Sofiia"
+        },
+        {
+          "date": "01.03",
+          "assignee": "Rafaela"
+        },
+        {
+          "date": "08.03",
+          "assignee": "Lisa B."
+        },
+        {
+          "date": "15.03",
+          "assignee": "Sofiia"
+        },
+        {
+          "date": "22.03",
+          "assignee": "Rafaela"
+        },
+        {
+          "date": "29.03",
+          "assignee": "Lisa B."
+        }
+      ]
+    },
+    {
+      "task": "Wohnzimmer saugen",
+      "assignees": [
+        "Mert",
+        "Henri"
+      ],
+      "schedule": [
+        {
+          "date": "09.11",
+          "assignee": "Mert"
+        },
+        {
+          "date": "16.11",
+          "assignee": "Henri"
+        },
+        {
+          "date": "23.11",
+          "assignee": "Mert"
+        },
+        {
+          "date": "30.11",
+          "assignee": "Henri"
+        },
+        {
+          "date": "07.12",
+          "assignee": "Mert"
+        },
+        {
+          "date": "14.12",
+          "assignee": "Henri"
+        },
+        {
+          "date": "21.12",
+          "assignee": "Mert"
+        },
+        {
+          "date": "28.12",
+          "assignee": "Henri"
+        },
+        {
+          "date": "04.01",
+          "assignee": "Mert"
+        },
+        {
+          "date": "11.01",
+          "assignee": "Henri"
+        },
+        {
+          "date": "18.01",
+          "assignee": "Mert"
+        },
+        {
+          "date": "25.01",
+          "assignee": "Henri"
+        },
+        {
+          "date": "01.02",
+          "assignee": "Mert"
+        },
+        {
+          "date": "08.02",
+          "assignee": "Henri"
+        },
+        {
+          "date": "15.02",
+          "assignee": "Mert"
+        },
+        {
+          "date": "22.02",
+          "assignee": "Henri"
+        },
+        {
+          "date": "01.03",
+          "assignee": "Mert"
+        },
+        {
+          "date": "08.03",
+          "assignee": "Henri"
+        },
+        {
+          "date": "15.03",
+          "assignee": "Mert"
+        },
+        {
+          "date": "22.03",
+          "assignee": "Henri"
+        },
+        {
+          "date": "29.03",
+          "assignee": "Mert"
+        }
+      ]
+    },
+    {
+      "task": "Tafel",
+      "assignees": [
+        "Myroslava",
+        "Charlotte"
+      ],
+      "weekday": "thursday"
+    },
+    {
+      "task": "Toilettenpapier",
+      "assignees": [
+        "Båndu",
+        "Shayan"
+      ],
+      "schedule": [
+        {
+          "date": "09.11"
+        },
+        {
+          "date": "16.11"
+        },
+        {
+          "date": "23.11"
+        },
+        {
+          "date": "30.11"
+        },
+        {
+          "date": "07.12"
+        },
+        {
+          "date": "14.12"
+        },
+        {
+          "date": "21.12"
+        },
+        {
+          "date": "28.12"
+        },
+        {
+          "date": "04.01"
+        },
+        {
+          "date": "11.01"
+        },
+        {
+          "date": "18.01"
+        },
+        {
+          "date": "25.01"
+        },
+        {
+          "date": "01.02"
+        },
+        {
+          "date": "08.02"
+        },
+        {
+          "date": "15.02"
+        },
+        {
+          "date": "22.02"
+        },
+        {
+          "date": "01.03"
+        },
+        {
+          "date": "08.03"
+        },
+        {
+          "date": "15.03"
+        },
+        {
+          "date": "22.03"
+        },
+        {
+          "date": "29.03"
+        }
       ]
     },
     {
       "task": "Pfand",
-      "assignees": ["Martin", "Noah"],
+      "assignees": [
+        "Ahmed",
+        "Tim",
+        "Marcel R."
+      ],
       "schedule": []
     },
     {
       "task": "Drucker",
-      "assignees": ["Xaver"],
+      "assignees": [
+        "Flo"
+      ],
       "schedule": []
     },
     {
       "task": "Kaffee",
-      "assignees": ["Donatella"],
+      "assignees": [
+        "Mert"
+      ],
+      "schedule": []
+    },
+    {
+      "task": "Waschmarken und Tücher",
+      "assignees": [
+        "Maja"
+      ],
       "schedule": []
     }
   ]
