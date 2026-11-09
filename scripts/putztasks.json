@@ -110,7 +110,7 @@
       "task": "Gefrierschränke",
       "assignees": [
         "Sabri",
-        "Telli"
+        "Donatella"
       ],
       "schedule": [
         {
@@ -119,7 +119,7 @@
         },
         {
           "date": "Februar",
-          "assignee": "Telli"
+          "assignee": "Donatella"
         }
       ]
     },
