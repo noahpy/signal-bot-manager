@@ -222,3 +222,38 @@ def format_table(headers, rows):
     for row in rows:
         lines.append(_fmt_row(row))
     return "\n".join(lines)
+
+
+def resolve_group_members(signal_client, chat):
+    """Get group members and resolve their names via Chat DB, falling back to signal-cli's recipient DB."""
+    raw_members = get_group_members(signal_client, chat)
+    members = []
+    for m in raw_members:
+        uuid = m.get("uuid")
+        number = m.get("number")
+        name = None
+        # Try Chat DB lookup by uuid
+        if uuid:
+            try:
+                name = Chat.objects.get(identifier=uuid).name
+            except Chat.DoesNotExist:
+                pass
+        # Try Chat DB lookup by number
+        if number:
+            try:
+                num_name = Chat.objects.get(identifier=number).name
+                if not name:
+                    name = num_name
+            except Chat.DoesNotExist:
+                pass
+        # signal-cli's recipient table: get missing name or phone number
+        if uuid and (not name or not number):
+            result = _lookup_signalcli_recipient(uuid)
+            if result:
+                if not name:
+                    name = result["name"]
+                if not number and result.get("number"):
+                    number = result["number"]
+        identifier = number or uuid
+        members.append({"identifier": identifier, "name": name or "", "number": number, "uuid": uuid})
+    return members

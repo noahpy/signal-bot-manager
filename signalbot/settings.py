@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +21,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@lm2ot1u=bp)+-hk)!he%88c2^*wui!@fz9st#h5jbutv^zz*f'
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-@lm2ot1u=bp)+-hk)!he%88c2^*wui!@fz9st#h5jbutv^zz*f',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o]
 
 
 # Application definition
@@ -40,6 +45,7 @@ INSTALLED_APPS = [
     'core',
     'dashboard',
     'webhook',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'dashboard.middleware.LoginRequiredMiddleware',
 ]
 
 ROOT_URLCONF = 'signalbot.urls'
@@ -78,7 +85,7 @@ WSGI_APPLICATION = 'signalbot.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.environ.get('DB_PATH', BASE_DIR / 'db.sqlite3'),
     }
 }
 
@@ -118,6 +125,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.environ.get('STATIC_ROOT', BASE_DIR / 'staticfiles')
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
+# Off by default so existing deployments keep working unchanged; set
+# DASHBOARD_REQUIRE_LOGIN=1 to protect the dashboard with Django accounts.
+DASHBOARD_REQUIRE_LOGIN = os.environ.get('DASHBOARD_REQUIRE_LOGIN', '0') == '1'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -144,6 +158,14 @@ LOGGING = {
     },
 }
 
-SIGNAL_CLI_PATH = '/usr/bin/signal-cli'
-SIGNAL_CLI_CONFIG = Path.home() / '.local/share/signal-cli'
+SIGNAL_CLI_PATH = os.environ.get('SIGNAL_CLI_PATH', '/usr/bin/signal-cli')
+SIGNAL_CLI_CONFIG = Path(os.environ.get('SIGNAL_CLI_DATA_DIR', Path.home() / '.local/share/signal-cli'))
 SCRIPTS_DIR = BASE_DIR / 'scripts'
+
+# Bearer token for the JSON API used by signal-bot-reminder-generator.
+# The API is disabled (all requests 403) while this is empty.
+REMINDER_API_TOKEN = os.environ.get('REMINDER_API_TOKEN', '')
+# Default timezone for reminder specs.
+REMINDER_DEFAULT_TZ = os.environ.get('REMINDER_DEFAULT_TZ', 'Europe/Berlin')
+
+BIND_ADDRESS = os.environ.get('BIND_ADDRESS', '0.0.0.0:8000')

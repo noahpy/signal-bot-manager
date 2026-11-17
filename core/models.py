@@ -46,6 +46,9 @@ class Job(models.Model):
         help_text="Send to the chat that triggered the job instead of (or in addition to) the target chats.",
     )
     config_json = models.JSONField(default=dict, blank=True)
+    # Set for jobs owned by an external system (e.g. "reminder-generator") via the API.
+    managed_by = models.CharField(max_length=50, blank=True, default="")
+    external_id = models.CharField(max_length=100, blank=True, default="", db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

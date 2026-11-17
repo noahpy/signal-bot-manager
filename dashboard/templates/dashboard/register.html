@@ -1,0 +1,157 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Register Number — Signal Bot{% endblock %}
+
+{% block content %}
+<h2>Register a phone number (landline / Festnetz)</h2>
+
+{% for m in messages %}
+<article><p>{{ m }}</p></article>
+{% endfor %}
+
+{% if account %}
+<article>
+    <header>Active account</header>
+    <p><strong>{{ account.phone_number }}</strong> — {{ account.device_name }}, since {{ account.linked_at|date:"Y-m-d H:i" }}</p>
+</article>
+{% endif %}
+
+{% if state.error %}
+<article style="border-left: 4px solid var(--pico-del-color);">
+    <header><strong>Last step failed</strong></header>
+    {% for h in state.hints %}<p>💡 {{ h }}</p>{% endfor %}
+    <pre class="log">{{ state.error }}</pre>
+</article>
+{% endif %}
+
+{% if state.step == "done" %}
+<article style="border-left: 4px solid var(--pico-ins-color);">
+    <header><strong>✅ {{ state.number }} is registered</strong></header>
+    <p>The bot will start using it within about a minute (check the <a href="{% url 'dashboard:index' %}">dashboard</a>).
+       Then add the bot to your Signal groups and press <em>Sync</em> on the <a href="{% url 'dashboard:chat_list' %}">Chats</a> page.</p>
+    {% for w in state.warnings %}<p>⚠️ {{ w }}</p>{% endfor %}
+    <form method="post" action="{% url 'dashboard:register_action' 'reset' %}">{% csrf_token %}
+        <button class="secondary outline" type="submit">Clear wizard</button>
+    </form>
+</article>
+{% else %}
+
+<article>
+    <header><strong>How it works</strong></header>
+    <ol>
+        <li>Open <a href="https://signalcaptchas.org/registration/generate.html" target="_blank" rel="noopener">signalcaptchas.org/registration/generate.html</a>,
+            solve the captcha. Right-click the <em>“Open Signal”</em> link → <em>Copy link</em>. It starts with <code>signalcaptcha://</code>.
+            Paste it below <strong>immediately</strong> — it expires after about a minute.</li>
+        <li><strong>Step 1</strong> asks Signal for an SMS. A landline can't receive it — that's expected, Signal just requires this before a call.</li>
+        <li>After ~1 minute, <strong>Step 2</strong> makes Signal call the number. Pick up: a voice reads a 6-digit code (repeated).
+            Signal may ask for a fresh captcha here too.</li>
+        <li><strong>Step 3</strong>: enter the code. Done.</li>
+    </ol>
+    <p><small>Registering makes this server the account's main device. You can link Signal Desktop to it afterwards (bottom of this page).</small></p>
+</article>
+
+<article>
+    <header><strong>Step 1 — request SMS</strong>
+        {% if state.sms_requested_at %}<span class="badge badge-success">done</span>{% endif %}</header>
+    <form method="post" action="{% url 'dashboard:register_action' 'sms' %}">
+        {% csrf_token %}
+        <label>Phone number
+            <input type="text" name="number" placeholder="+49 89 1234567" value="{{ state.number|default:'' }}" required>
+            <small>Landline numbers need the area code; leading 0 is converted to +49.</small>
+        </label>
+        <label>Captcha link
+            <input type="text" name="captcha" placeholder="signalcaptcha://signal-hcaptcha...." autocomplete="off">
+        </label>
+        <button type="submit">Request SMS</button>
+    </form>
+</article>
+
+<article>
+    <header><strong>Step 2 — request voice call</strong>
+        {% if state.voice_requested_at %}<span class="badge badge-success">called</span>{% endif %}</header>
+    {% if not state.number %}
+        <p><small>Do step 1 first.</small></p>
+    {% else %}
+    <form method="post" action="{% url 'dashboard:register_action' 'voice' %}">
+        {% csrf_token %}
+        <label>Captcha link <small>(only if Signal asks for a new one)</small>
+            <input type="text" name="captcha" placeholder="signalcaptcha://..." autocomplete="off">
+        </label>
+        <button type="submit" id="voice-btn" {% if state.voice_wait_remaining %}disabled{% endif %}>
+            Call {{ state.number }} now
+        </button>
+        {% if state.voice_wait_remaining %}
+        <small id="voice-wait">Available in <span id="voice-secs">{{ state.voice_wait_remaining }}</span>s</small>
+        <script>
+            (function () {
+                let s = {{ state.voice_wait_remaining }};
+                const t = setInterval(function () {
+                    s -= 1;
+                    document.getElementById("voice-secs").textContent = s;
+                    if (s <= 0) {
+                        clearInterval(t);
+                        document.getElementById("voice-btn").disabled = false;
+                        document.getElementById("voice-wait").textContent = "You can request the call now.";
+                    }
+                }, 1000);
+            })();
+        </script>
+        {% endif %}
+    </form>
+    {% endif %}
+</article>
+
+<article>
+    <header><strong>Step 3 — enter the code</strong></header>
+    {% if not state.number %}
+        <p><small>Do steps 1 and 2 first.</small></p>
+    {% else %}
+    <form method="post" action="{% url 'dashboard:register_action' 'verify' %}">
+        {% csrf_token %}
+        <label>6-digit code <input type="text" name="code" inputmode="numeric" placeholder="123456" autocomplete="one-time-code" required></label>
+        <label>Bot display name <small>(profile name shown in chats)</small>
+            <input type="text" name="profile_name" value="Schollheim Bot"></label>
+        <label>New registration lock PIN <small>(recommended — prevents anyone else from re-registering this number; write it down!)</small>
+            <input type="text" name="new_pin" autocomplete="off" placeholder="e.g. 4–20 digits"></label>
+        <details><summary><small>Number already had a registration lock PIN?</small></summary>
+            <label>Existing PIN <input type="text" name="pin" autocomplete="off"></label>
+        </details>
+        <button type="submit">Verify &amp; finish</button>
+    </form>
+    {% endif %}
+</article>
+
+{% if state.number %}
+<form method="post" action="{% url 'dashboard:register_action' 'reset' %}">{% csrf_token %}
+    <button class="secondary outline" type="submit" onclick="return confirm('Abort the registration wizard?')">Abort / start over</button>
+</form>
+{% endif %}
+{% endif %}
+
+{% if state.log %}
+<details>
+    <summary>signal-cli output ({{ state.log|length }} steps)</summary>
+    {% for entry in state.log %}
+    <p><strong>{{ entry.action }}</strong> {% if entry.ok %}<span class="badge badge-success">ok</span>{% else %}<span class="badge badge-danger">failed</span>{% endif %}</p>
+    {% if entry.output %}<pre class="log">{{ entry.output }}</pre>{% endif %}
+    {% endfor %}
+</details>
+{% endif %}
+
+{% if account and state.step != "started" and state.step != "sms_requested" and state.step != "voice_requested" %}
+<article>
+    <header><strong>Linked devices</strong></header>
+    {% if devices_error %}<p><small>Could not list devices: {{ devices_error }}</small></p>{% endif %}
+    {% if devices %}
+    <ul>{% for d in devices %}<li>#{{ d.id }} {{ d.name|default:"(unnamed)" }}</li>{% endfor %}</ul>
+    {% endif %}
+    <p>To read/write as the bot yourself, use Signal Desktop (or a tablet): it shows a QR code when linking.
+       Decode it (e.g. with any QR scanner app) and paste the <code>sgnl://linkdevice?...</code> link here.</p>
+    <form method="post" action="{% url 'dashboard:device_add' %}">
+        {% csrf_token %}
+        <input type="text" name="uri" placeholder="sgnl://linkdevice?uuid=...&pub_key=..." required>
+        <button type="submit">Link device</button>
+    </form>
+</article>
+{% endif %}
+{% endblock %}

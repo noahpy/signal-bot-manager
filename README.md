@@ -110,6 +110,39 @@ curl -X POST http://your-server:8000/webhook/<token>/ \
 ```
 The payload is available in `ctx.trigger_context["payload"]`.
 
+## Registering a number (e.g. a landline) instead of linking
+
+Dashboard → **Account** → *register a phone number* (`/register/`). The wizard walks through
+signal-cli's flow: captcha (from signalcaptchas.org) → request SMS (required by Signal even for
+landlines) → after ~1 min request a voice call → enter the 6-digit code, optionally set a
+profile name and a registration-lock PIN. While a registration is in progress the listener
+doesn't start signal-cli for the account. Signal Desktop can then be linked to the bot's
+account via *Linked devices* on the same page.
+
+## Reminder API (for signal-bot-reminder-generator)
+
+Enabled when `REMINDER_API_TOKEN` is set; `Authorization: Bearer <token>`.
+
+| Endpoint | |
+|---|---|
+| `GET /api/v1/status/` | account + whether signal-cli runs |
+| `GET /api/v1/groups/`, `POST /api/v1/groups/sync/` | Signal groups known to the bot |
+| `GET /api/v1/groups/members/?id=<group id>` | members (uuid, number, name) |
+| `POST /api/v1/preview/` | `{spec, from?, days?}` → messages that would be sent (dry run) |
+| `GET /api/v1/reminders/` | managed reminder jobs |
+| `PUT/GET/DELETE /api/v1/reminders/<id>/` | upsert `{group_id, spec, enabled, name?}` |
+| `POST /api/v1/reminders/<id>/run/` | send now (next occurrence) |
+| `GET /api/v1/reminders/<id>/executions/` | run logs |
+
+Specs are documented in `core/reminders.py` and executed by `scripts/reminder_runner.py`.
+
+## Configuration via environment
+
+`SECRET_KEY`, `DEBUG` (default 1), `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `DB_PATH`, `STATIC_ROOT`,
+`BIND_ADDRESS` (default `0.0.0.0:8000`), `DASHBOARD_REQUIRE_LOGIN` (default 0; 1 = Django login
+for the dashboard), `SIGNAL_CLI_PATH`, `SIGNAL_CLI_DATA_DIR`, `REMINDER_API_TOKEN`,
+`REMINDER_DEFAULT_TZ` (default Europe/Berlin). Defaults keep the previous behaviour.
+
 ## Systemd Service
 
 ```ini

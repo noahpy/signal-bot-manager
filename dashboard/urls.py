@@ -17,6 +17,9 @@ urlpatterns = [
     path("link/", views.link_account, name="link_account"),
     path("link/start/", views.link_start, name="link_start"),
     path("link/status/", views.link_status, name="link_status"),
+    path("register/", views.register_account, name="register_account"),
+    path("register/<str:action>/", views.register_action, name="register_action"),
+    path("devices/add/", views.device_add, name="device_add"),
     path("chats/", views.chat_list, name="chat_list"),
     path("chats/sync/", views.chat_sync, name="chat_sync"),
 ]

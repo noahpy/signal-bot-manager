@@ -23,6 +23,13 @@ def listener_loop():
     restart_delay = RESTART_DELAY_MIN
     while True:
         try:
+            from core.registration import registration_in_progress
+            if registration_in_progress():
+                # The account files exist but aren't verified yet; starting jsonRpc
+                # now would lock the account and break `signal-cli verify`.
+                logger.info("Registration in progress, listener waiting...")
+                time.sleep(10)
+                continue
             acct = SignalAccount.objects.filter(linked=True).first()
             if not acct or not acct.phone_number:
                 from core.signal_client import detect_account

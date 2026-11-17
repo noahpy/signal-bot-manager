@@ -5,6 +5,9 @@
 {% block content %}
 <h2>Signal Account</h2>
 
+<p>Two ways to give the bot an account: <strong>link</strong> it as a secondary device of an existing Signal account (QR code below), or
+<a href="{% url 'dashboard:register_account' %}"><strong>register a phone number</strong></a> (e.g. a landline, verified by voice call) as the bot's own account.</p>
+
 {% if account and account.linked %}
 <article>
     <header>Linked Account</header>

@@ -12,7 +12,8 @@ django.setup()
 
 def run_django():
     from django.core.management import call_command
-    call_command("runserver", "0.0.0.0:8000", use_reloader=False)
+    from django.conf import settings
+    call_command("runserver", settings.BIND_ADDRESS, use_reloader=False)
 
 
 def run_scheduler():

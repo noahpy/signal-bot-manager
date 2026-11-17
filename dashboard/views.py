@@ -1,3 +1,4 @@
+from django.contrib import messages
 import base64
 import io
 import threading
@@ -7,6 +8,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.executor import execute_job
+from core import registration
 from core.linking import get_link_state, start_linking
 from core.models import Chat, Job, JobExecution, SignalAccount
 from core.signal_client import SignalClient, detect_account
@@ -142,6 +144,51 @@ def link_status(request):
         "state": state,
         "qr_data_uri": qr_data_uri,
     })
+
+
+def register_account(request):
+    account = SignalAccount.objects.filter(linked=True).first()
+    devices, devices_error = None, None
+    if account and not registration.registration_in_progress():
+        try:
+            from core.signal_client import SignalClient
+            devices = SignalClient()._call("listDevices", timeout=30)
+        except Exception as e:
+            devices_error = str(e)
+    return render(request, "dashboard/register.html", {
+        "state": registration.get_state(),
+        "account": account,
+        "devices": devices,
+        "devices_error": devices_error,
+    })
+
+
+def register_action(request, action):
+    if request.method != "POST":
+        return redirect("dashboard:register_account")
+    p = request.POST
+    if action == "sms":
+        registration.request_sms(p.get("number", ""), p.get("captcha", ""))
+    elif action == "voice":
+        registration.request_voice(p.get("captcha", ""))
+    elif action == "verify":
+        registration.verify(p.get("code", ""), pin=p.get("pin", ""),
+                            profile_name=p.get("profile_name", ""), new_pin=p.get("new_pin", ""))
+    elif action == "reset":
+        registration.reset()
+    return redirect("dashboard:register_account")
+
+
+def device_add(request):
+    if request.method == "POST":
+        uri = request.POST.get("uri", "").strip()
+        try:
+            from core.signal_client import SignalClient
+            SignalClient()._call("addDevice", uri=uri, timeout=60)
+            messages.success(request, "Device linked.")
+        except Exception as e:
+            messages.error(request, f"Linking the device failed: {e}")
+    return redirect("dashboard:register_account")
 
 
 def chat_list(request):

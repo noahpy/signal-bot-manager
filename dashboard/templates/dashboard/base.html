@@ -38,6 +38,9 @@
             <li><a href="{% url 'dashboard:job_list' %}">Jobs</a></li>
             <li><a href="{% url 'dashboard:chat_list' %}">Chats</a></li>
             <li><a href="{% url 'dashboard:link_account' %}">Account</a></li>
+            {% if user.is_authenticated %}
+            <li><form method="post" action="{% url 'logout' %}" style="margin:0">{% csrf_token %}<button type="submit" class="outline secondary" style="padding:0.2em 0.6em;margin:0">Logout</button></form></li>
+            {% endif %}
         </ul>
     </nav>
     <main class="container">
