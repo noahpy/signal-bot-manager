@@ -75,9 +75,11 @@ class SignalClient:
             logger.warning("listGroups failed, returning no groups", exc_info=True)
             return []
 
-    def list_contacts(self):
+    def list_contacts(self, detailed=False):
+        """With detailed=True signal-cli also fetches missing profiles (names) from the server."""
+        params = {"allRecipients": True, "detailed": True} if detailed else {}
         try:
-            result = self._call("listContacts", timeout=60)
+            result = self._call("listContacts", timeout=180 if detailed else 60, **params)
             return result if isinstance(result, list) else []
         except Exception:
             logger.warning("listContacts failed, returning no contacts", exc_info=True)

@@ -201,7 +201,7 @@ def preview(request, body):
             "send_on": remind_day.isoformat(),
             "send_time": spec["send_time"],
             "occurrence": occ.isoformat(),
-            "people": [p.get("name") or p.get("uuid") for p in people],
+            "people": [p.get("name") or p.get("number") or "Unbekanntes Mitglied" for p in people],
             "text": text,
         })
     return JsonResponse({"spec": spec, "items": items})

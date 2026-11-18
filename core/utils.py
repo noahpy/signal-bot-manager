@@ -10,7 +10,53 @@ Script authors can import helpers from here:
     )
 """
 
+import logging
+import threading
+import time
+
 from core.models import Chat, KeyValue
+
+logger = logging.getLogger(__name__)
+
+# uuid -> {"name", "number"} from signal-cli's contact list (incl. profiles), refreshed lazily.
+CONTACT_REFRESH_SECONDS = 600
+_contacts = {"at": 0.0, "by_uuid": {}}
+_contacts_lock = threading.Lock()
+
+
+def contact_display_name(c):
+    """Best human name for a signal-cli contact: own nickname/contact name, then profile name."""
+    profile = c.get("profile") or {}
+    for name in (
+        c.get("nickName"),
+        " ".join(filter(None, [c.get("nickGivenName"), c.get("nickFamilyName")])),
+        c.get("name"),
+        " ".join(filter(None, [c.get("givenName"), c.get("familyName")])),
+        " ".join(filter(None, [profile.get("givenName"), profile.get("familyName")])),
+        c.get("profileName"),
+    ):
+        if name and name.strip():
+            return name.strip()
+    return ""
+
+
+def update_contact_directory(contacts):
+    by_uuid = {}
+    for c in contacts or []:
+        if c.get("uuid"):
+            by_uuid[c["uuid"]] = {"name": contact_display_name(c), "number": c.get("number")}
+    with _contacts_lock:
+        _contacts["at"] = time.time()
+        if by_uuid:
+            _contacts["by_uuid"] = by_uuid
+
+
+def contact_directory(signal_client, refresh=False):
+    """uuid -> {name, number}. Asking signal-cli for detailed contacts makes it fetch missing
+    profile names; done at most every CONTACT_REFRESH_SECONDS unless refresh=True."""
+    if refresh or time.time() - _contacts["at"] > CONTACT_REFRESH_SECONDS:
+        update_contact_directory(signal_client.list_contacts(detailed=True))
+    return _contacts["by_uuid"]
 
 
 def store(namespace, key, value):
@@ -246,6 +292,11 @@ def resolve_group_members(signal_client, chat):
                     name = num_name
             except Chat.DoesNotExist:
                 pass
+        # signal-cli contact list with profiles (fetches profiles the account hasn't loaded yet)
+        if uuid and (not name or not number):
+            entry = contact_directory(signal_client).get(uuid) or {}
+            name = name or entry.get("name")
+            number = number or entry.get("number")
         # signal-cli's recipient table: get missing name or phone number
         if uuid and (not name or not number):
             result = _lookup_signalcli_recipient(uuid)

@@ -102,3 +102,29 @@ class ApiTests(TestCase):
         items = r.json()["items"]
         self.assertEqual([i["send_on"] for i in items], ["2026-12-01"])
         self.assertIn("@Leon", items[0]["text"])
+
+
+class MemberNameTests(TestCase):
+    def test_display_name_order_and_profile_fetch(self):
+        from core import utils
+        self.assertEqual(utils.contact_display_name(
+            {"name": "", "profile": {"givenName": "Martin", "familyName": "W"}}), "Martin W")
+        self.assertEqual(utils.contact_display_name({"nickName": "Tini", "profile": {"givenName": "Martin"}}), "Tini")
+        self.assertEqual(utils.contact_display_name({"profile": {}}), "")
+
+        class FakeSignal:
+            calls = 0
+
+            def get_group_members(self, gid):
+                return [{"uuid": "u-1", "number": None}]
+
+            def list_contacts(self, detailed=False):
+                FakeSignal.calls += 1
+                return [{"uuid": "u-1", "number": None, "profile": {"givenName": "Martin"}}]
+
+        utils._contacts.update(at=0.0, by_uuid={})
+        chat = Chat.objects.create(chat_type="group", identifier="grp/x==", name="G")
+        sig = FakeSignal()
+        self.assertEqual(utils.resolve_group_members(sig, chat)[0]["name"], "Martin")
+        utils.resolve_group_members(sig, chat)
+        self.assertEqual(FakeSignal.calls, 1)  # cached

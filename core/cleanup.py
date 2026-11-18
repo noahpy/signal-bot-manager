@@ -25,6 +25,14 @@ def cleanup_loop():
             run_cleanup()
         except Exception:
             logger.exception("Cleanup failed")
+        try:
+            # Daily chat/contact sync keeps member names (Signal profiles) current.
+            from core import jsonrpc
+            if jsonrpc.is_running():
+                from dashboard.views import _sync_worker
+                _sync_worker()
+        except Exception:
+            logger.exception("Daily chat sync failed")
         time.sleep(CLEANUP_INTERVAL)
 
 

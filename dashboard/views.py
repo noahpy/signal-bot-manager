@@ -217,13 +217,14 @@ def _sync_worker():
         _sync_state["errors"].append(f"Note to Self: {e}")
 
     try:
-        contacts = client.list_contacts()
+        contacts = client.list_contacts(detailed=True)
+        from core.utils import update_contact_directory
+        update_contact_directory(contacts)
         for c in contacts:
             number = c.get("number")
             uuid = c.get("uuid")
-            profile = c.get("profile") or {}
-            profile_name = " ".join(filter(None, [profile.get("givenName"), profile.get("familyName")])).strip()
-            name = profile_name or c.get("name") or c.get("contactName") or c.get("profileName", "")
+            from core.utils import contact_display_name
+            name = contact_display_name(c)
             identifier = number or uuid
             if not identifier:
                 continue
