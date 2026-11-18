@@ -69,16 +69,19 @@
 <article>
     <header><strong>Step 2 — request voice call</strong>
         {% if state.voice_requested_at %}<span class="badge badge-success">called</span>{% endif %}</header>
-    {% if not state.number %}
-        <p><small>Do step 1 first.</small></p>
-    {% else %}
     <form method="post" action="{% url 'dashboard:register_action' 'voice' %}">
         {% csrf_token %}
+        {% if not state.number %}
+        <p><small>For a landline you can start here directly (Signal refuses SMS for landlines anyway).</small></p>
+        <label>Phone number
+            <input type="text" name="number" placeholder="+49 89 ..." required>
+        </label>
+        {% endif %}
         <label>Captcha link <small>(only if Signal asks for a new one)</small>
             <input type="text" name="captcha" placeholder="signalcaptcha://..." autocomplete="off">
         </label>
         <button type="submit" id="voice-btn" {% if state.voice_wait_remaining %}disabled{% endif %}>
-            Call {{ state.number }} now
+            Call {{ state.number|default:"this number" }} now
         </button>
         {% if state.voice_wait_remaining %}
         <small id="voice-wait">Available in <span id="voice-secs">{{ state.voice_wait_remaining }}</span>s</small>
@@ -98,7 +101,6 @@
         </script>
         {% endif %}
     </form>
-    {% endif %}
 </article>
 
 <article>

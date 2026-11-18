@@ -170,7 +170,7 @@ def register_action(request, action):
     if action == "sms":
         registration.request_sms(p.get("number", ""), p.get("captcha", ""))
     elif action == "voice":
-        registration.request_voice(p.get("captcha", ""))
+        registration.request_voice(p.get("captcha", ""), number=p.get("number", ""))
     elif action == "verify":
         registration.verify(p.get("code", ""), pin=p.get("pin", ""),
                             profile_name=p.get("profile_name", ""), new_pin=p.get("new_pin", ""))

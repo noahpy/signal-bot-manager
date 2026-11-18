@@ -142,12 +142,19 @@ def request_sms(number, captcha):
         return state
 
 
-def request_voice(captcha):
+def request_voice(captcha, number=""):
     with _lock:
         state = _kv()
+        if not state.get("number") and number:
+            number = normalize_number(number)
+            if not E164_RE.match(number):
+                return {**state, "error": f"'{number}' is not a valid phone number (expected e.g. +49891234567).",
+                        "hints": []}
+            state = {"number": number, "step": "started", "started_at": timezone.now().isoformat(), "log": []}
+            _save(state)  # in-progress flag before signal-cli touches the account files
         number = state.get("number")
         if not number:
-            return {**state, "error": "Request the SMS first.", "hints": []}
+            return {**state, "error": "Enter the phone number.", "hints": []}
         wait = VOICE_WAIT_SECONDS - (time.time() - (state.get("sms_requested_at") or 0))
         if wait > 0:
             return {**state, "error": f"Please wait {int(wait)}s more before requesting the call.", "hints": []}
