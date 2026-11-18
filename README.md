@@ -142,6 +142,13 @@ Specs are documented in `core/reminders.py` and executed by `scripts/reminder_ru
 `BIND_ADDRESS` (default `0.0.0.0:8000`), `DASHBOARD_REQUIRE_LOGIN` (default 0; 1 = Django login
 for the dashboard), `SIGNAL_CLI_PATH`, `SIGNAL_CLI_DATA_DIR`, `REMINDER_API_TOKEN`,
 `REMINDER_DEFAULT_TZ` (default Europe/Berlin). Defaults keep the previous behaviour.
+`HTTPS` (default 0; 1 = running behind a TLS proxy: trust `X-Forwarded-Proto`, secure cookies).
+
+On signal-bot.schollheim.net the dashboard is served by nginx at
+`https://dashboard-signal-bot.schollheim.net` (intranet only) with the Schollheim wildcard
+certificate (`/etc/ssl/certs/schollheim_net_bundle.cer`, key in `/etc/ssl/private/`), copied from
+the other Schollheim servers. **It expires 2027-01-31 and must be renewed there by hand** (then
+`systemctl reload nginx`).
 
 ## Systemd Service
 
