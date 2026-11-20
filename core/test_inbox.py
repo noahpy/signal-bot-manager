@@ -67,7 +67,7 @@ class MessagePageTests(TestCase):
         with mock.patch("dashboard.message_views.SignalClient") as sc:
             r = self.client.post(f"/messages/{self.chat.pk}/send/", {"text": "Hi from the bot"})
         self.assertEqual(r.status_code, 302)
-        sc.return_value.send_to_chat.assert_called_once_with(self.chat, "Hi from the bot")
+        sc.return_value.send_to_chat.assert_called_once_with(self.chat, "Hi from the bot", attachments=None)
 
     def test_requires_login(self):
         self.client.logout()
@@ -82,3 +82,45 @@ class MessagePageDisabledTests(TestCase):
         self.assertEqual(inbox.messages("g1"), [])  # nothing buffered
         self.assertEqual(self.client.get("/messages/").status_code, 404)
         self.assertNotContains(self.client.get("/"), "/messages/")
+
+
+@override_settings(DASHBOARD_REQUIRE_LOGIN=True, MESSAGES_PAGE=True)
+class ImageUploadTests(TestCase):
+    def setUp(self):
+        self.chat = Chat.objects.create(chat_type="group", identifier="g1", name="H2F4 Tasks")
+        User.objects.create_superuser("admin", password="pw")
+        self.client.login(username="admin", password="pw")
+
+    @staticmethod
+    def image(fmt, name):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        buf = io.BytesIO()
+        Image.new("RGB", (4, 4), "red").save(buf, fmt)
+        return SimpleUploadedFile(name, buf.getvalue())
+
+    def test_send_images_and_cleanup(self):
+        import os
+        seen = {}
+
+        def fake_send(chat, text, attachments=None):
+            seen["paths"] = attachments
+            seen["exist"] = [os.path.exists(p) for p in attachments]
+
+        with mock.patch("dashboard.message_views.SignalClient") as sc:
+            sc.return_value.send_to_chat.side_effect = fake_send
+            r = self.client.post(f"/messages/{self.chat.pk}/send/", {
+                "text": "", "images": [self.image("PNG", "a.png"), self.image("GIF", "party.gif")]})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual([p.rsplit(".", 1)[1] for p in seen["paths"]], ["png", "gif"])
+        self.assertEqual(seen["exist"], [True, True])
+        self.assertFalse(any(os.path.exists(p) for p in seen["paths"]))  # deleted after sending
+
+    def test_rejects_non_images(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        with mock.patch("dashboard.message_views.SignalClient") as sc:
+            r = self.client.post(f"/messages/{self.chat.pk}/send/", {
+                "text": "hi", "images": [SimpleUploadedFile("evil.gif", b"#!/bin/sh\necho no")]}, follow=True)
+        sc.return_value.send_to_chat.assert_not_called()
+        self.assertContains(r, "not a valid image")

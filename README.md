@@ -148,7 +148,8 @@ for the dashboard), `SIGNAL_CLI_PATH`, `SIGNAL_CLI_DATA_DIR`, `REMINDER_API_TOKE
 ## Messages page and data retention
 
 *Messages* in the dashboard lists the bot's chats; each chat shows its recent messages and has a
-box to send a message as the bot. Messages are held **only in memory** (`core/inbox.py`): at most
+box to send a message as the bot. Images and GIFs (JPEG/PNG/GIF/WebP, up to 10 per message, 20 MB each) can
+be attached; they're checked with Pillow, stored in a temp dir only while sending, then deleted. Messages are held **only in memory** (`core/inbox.py`): at most
 200 per chat, 24 hours, never written to the database, logs or backups, and gone after a restart.
 The page is only enabled when the dashboard requires a login (or `MESSAGES_PAGE=1`); otherwise
 nothing is buffered.

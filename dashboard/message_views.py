@@ -1,6 +1,9 @@
 """Messages page: read the bot's recent chat messages (in-memory only, see core.inbox) and send."""
 
+import shutil
+import tempfile
 from datetime import datetime
+from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages as flash
@@ -14,6 +17,28 @@ from core.models import Chat
 from core.signal_client import SignalClient
 
 MAX_LENGTH = 4000
+MAX_FILES = 10
+MAX_FILE_BYTES = 20 * 1024 * 1024
+# Pillow format -> file extension signal-cli/Signal use to pick the content type.
+IMAGE_FORMATS = {"JPEG": "jpg", "PNG": "png", "GIF": "gif", "WEBP": "webp"}
+
+
+def _check_image(upload):
+    """Return the file extension if the upload is a real image we can send, else raise ValueError."""
+    from PIL import Image, UnidentifiedImageError
+    if upload.size > MAX_FILE_BYTES:
+        raise ValueError(f"{upload.name}: too large (max {MAX_FILE_BYTES // (1024 * 1024)} MB)")
+    try:
+        with Image.open(upload) as img:
+            fmt = img.format
+            img.verify()
+    except (UnidentifiedImageError, OSError, SyntaxError):
+        raise ValueError(f"{upload.name}: not a valid image")
+    finally:
+        upload.seek(0)
+    if fmt not in IMAGE_FORMATS:
+        raise ValueError(f"{upload.name}: {fmt} is not supported (JPEG, PNG, GIF, WebP)")
+    return IMAGE_FORMATS[fmt]
 
 
 def _names():
@@ -54,6 +79,7 @@ def message_chat(request, pk):
     return render(request, "dashboard/message_chat.html", {
         "chat": chat, "msgs": list(_decorate(inbox.messages(chat.identifier))),
         "running": jsonrpc.is_running(), "max_length": MAX_LENGTH,
+        "max_files": MAX_FILES, "max_mb": MAX_FILE_BYTES // (1024 * 1024),
     })
 
 
@@ -69,13 +95,30 @@ def message_send(request, pk):
     _enabled()
     chat = get_object_or_404(Chat, pk=pk)
     text = (request.POST.get("text") or "").strip()
-    if not text:
-        flash.error(request, "Message is empty.")
+    uploads = request.FILES.getlist("images")
+    if not text and not uploads:
+        flash.error(request, "Write a message or choose an image.")
     elif len(text) > MAX_LENGTH:
         flash.error(request, f"Message is too long (max {MAX_LENGTH} characters).")
+    elif len(uploads) > MAX_FILES:
+        flash.error(request, f"At most {MAX_FILES} images per message.")
     else:
+        # Uploads go to a private temp dir only for the duration of the send, then are deleted.
+        tmp = Path(tempfile.mkdtemp(prefix="dashboard-upload-"))
         try:
-            SignalClient().send_to_chat(chat, text)
+            paths = []
+            for i, up in enumerate(uploads):
+                ext = _check_image(up)
+                path = tmp / f"image-{i + 1}.{ext}"
+                with open(path, "wb") as f:
+                    for chunk in up.chunks():
+                        f.write(chunk)
+                paths.append(str(path))
+            SignalClient().send_to_chat(chat, text, attachments=paths or None)
+        except ValueError as e:
+            flash.error(request, str(e))
         except Exception as e:
             flash.error(request, f"Sending failed: {e}")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
     return redirect("dashboard:message_chat", pk=chat.pk)

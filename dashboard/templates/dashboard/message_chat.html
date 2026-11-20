@@ -16,13 +16,29 @@
 </div>
 
 {% if not running %}<article class="flash-error" style="padding:0.6rem 1rem">signal-cli is not running — sending is not possible right now.</article>{% endif %}
-<form method="post" action="{% url 'dashboard:message_send' chat.pk %}"
+<form method="post" action="{% url 'dashboard:message_send' chat.pk %}" enctype="multipart/form-data"
       onsubmit="return confirm('Send this message to {{ chat.name|default:chat.identifier|escapejs }} as the bot?')">
     {% csrf_token %}
-    <textarea name="text" rows="3" maxlength="{{ max_length }}" placeholder="Message as the bot…" required></textarea>
+    <textarea name="text" rows="3" maxlength="{{ max_length }}" placeholder="Message as the bot… (optional with images)"></textarea>
+    <label>Images / GIFs <small>(optional, up to {{ max_files }}, JPEG/PNG/GIF/WebP, max {{ max_mb }} MB each)</small>
+        <input type="file" name="images" id="images" multiple accept="image/jpeg,image/png,image/gif,image/webp">
+    </label>
+    <div id="previews" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem"></div>
     <button type="submit" {% if not running %}disabled{% endif %}>Send as bot</button>
 </form>
 <script>
+    // Local previews of the chosen images (nothing is uploaded until you press Send).
+    document.getElementById('images').addEventListener('change', function () {
+        var box = document.getElementById('previews');
+        box.innerHTML = '';
+        Array.prototype.forEach.call(this.files, function (f) {
+            var img = document.createElement('img');
+            img.src = URL.createObjectURL(f);
+            img.style.cssText = 'max-height:110px;max-width:160px;border-radius:6px';
+            img.title = f.name;
+            box.appendChild(img);
+        });
+    });
     // Keep the newest messages in view.
     // Only auto-scroll if the reader was already at the bottom.
     (function () {
