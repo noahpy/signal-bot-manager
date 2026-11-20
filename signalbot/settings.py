@@ -77,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'dashboard.context_processors.dashboard',
             ],
         },
     },
@@ -138,6 +139,9 @@ LOGIN_REDIRECT_URL = '/'
 # Off by default so existing deployments keep working unchanged; set
 # DASHBOARD_REQUIRE_LOGIN=1 to protect the dashboard with Django accounts.
 DASHBOARD_REQUIRE_LOGIN = os.environ.get('DASHBOARD_REQUIRE_LOGIN', '0') == '1'
+# Messages page (read/send the bot's chats). Only sensible behind a login, so it defaults to
+# DASHBOARD_REQUIRE_LOGIN. When off, no messages are buffered at all.
+MESSAGES_PAGE = os.environ.get("MESSAGES_PAGE", "1" if DASHBOARD_REQUIRE_LOGIN else "0") == "1"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

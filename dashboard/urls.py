@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import message_views, views
 
 app_name = "dashboard"
 
@@ -21,5 +21,9 @@ urlpatterns = [
     path("register/<str:action>/", views.register_action, name="register_action"),
     path("devices/add/", views.device_add, name="device_add"),
     path("chats/", views.chat_list, name="chat_list"),
+    path("messages/", message_views.message_index, name="message_index"),
+    path("messages/<int:pk>/", message_views.message_chat, name="message_chat"),
+    path("messages/<int:pk>/list/", message_views.message_chat_partial, name="message_chat_partial"),
+    path("messages/<int:pk>/send/", message_views.message_send, name="message_send"),
     path("chats/sync/", views.chat_sync, name="chat_sync"),
 ]

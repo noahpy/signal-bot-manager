@@ -1,0 +1,39 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}{{ chat.name|default:chat.identifier }} — Messages{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'dashboard:message_index' %}">← Messages</a></p>
+<hgroup>
+    <h2>{{ chat.name|default:chat.identifier }}</h2>
+    <p>{% if chat.chat_type == "group" %}Group{% else %}Direct chat{% endif %} · only messages from the last 24 h since the bot's last restart (memory only)</p>
+</hgroup>
+
+<div id="message-list"
+     hx-get="{% url 'dashboard:message_chat_partial' chat.pk %}"
+     hx-trigger="every 5s" hx-swap="morph:innerHTML" hx-ext="morph">
+    {% include "dashboard/partials/message_list.html" %}
+</div>
+
+{% if not running %}<article class="flash-error" style="padding:0.6rem 1rem">signal-cli is not running — sending is not possible right now.</article>{% endif %}
+<form method="post" action="{% url 'dashboard:message_send' chat.pk %}"
+      onsubmit="return confirm('Send this message to {{ chat.name|default:chat.identifier|escapejs }} as the bot?')">
+    {% csrf_token %}
+    <textarea name="text" rows="3" maxlength="{{ max_length }}" placeholder="Message as the bot…" required></textarea>
+    <button type="submit" {% if not running %}disabled{% endif %}>Send as bot</button>
+</form>
+<script>
+    // Keep the newest messages in view.
+    // Only auto-scroll if the reader was already at the bottom.
+    (function () {
+        var box = document.getElementById('message-list'), stick = true;
+        function list() { return box.querySelector('.msgs'); }
+        function bottom() { var s = list(); if (s) s.scrollTop = s.scrollHeight; }
+        bottom();
+        box.addEventListener('htmx:beforeSwap', function () {
+            var s = list(); stick = !s || s.scrollHeight - s.scrollTop - s.clientHeight < 40;
+        });
+        box.addEventListener('htmx:afterSettle', function () { if (stick) bottom(); });
+    })();
+</script>
+{% endblock %}

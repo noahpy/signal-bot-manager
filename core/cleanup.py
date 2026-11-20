@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 CLEANUP_INTERVAL = 24 * 60 * 60
 MAX_AGE = 24 * 60 * 60
+# Job runs (and their logs, which may contain sent reminder texts) are kept this long.
+EXECUTION_MAX_AGE = 30 * 24 * 60 * 60
 # signal-cli caches downloaded media here; data/ holds the account keys and
 # must never be touched.
 MEDIA_DIRS = ["attachments", "stickers"]
@@ -38,8 +40,15 @@ def cleanup_loop():
 
 def run_cleanup():
     files = _delete_old_media()
+    runs = _delete_old_executions()
     rows = _wipe_messages()
-    logger.info("Cleanup: deleted %d media file(s), wiped %d message(s)", files, rows)
+    logger.info("Cleanup: deleted %d media file(s), %d old job run(s), wiped %d message(s)", files, runs, rows)
+
+
+def _delete_old_executions():
+    cutoff = timezone.now() - timezone.timedelta(seconds=EXECUTION_MAX_AGE)
+    deleted, _ = JobExecution.objects.filter(started_at__lt=cutoff).delete()
+    return deleted
 
 
 def _delete_old_media():

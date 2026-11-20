@@ -1,0 +1,13 @@
+<div class="msgs" style="max-height:60vh;overflow-y:auto;padding:0.5rem;border:1px solid var(--pico-muted-border-color);border-radius:6px;margin-bottom:1rem;">
+{% for m in msgs %}
+    <div style="display:flex;{% if m.direction == 'out' %}justify-content:flex-end;{% endif %}margin:0.35rem 0;">
+        <div style="max-width:75%;padding:0.4rem 0.7rem;border-radius:10px;{% if m.direction == 'out' %}background:var(--pico-primary-background);color:var(--pico-primary-inverse);{% else %}background:var(--pico-card-sectioning-background-color);{% endif %}">
+            <small style="opacity:0.8"><strong>{{ m.who }}</strong> · {{ m.time|date:"d.m. H:i" }}</small><br>
+            {% if m.text %}<span style="white-space:pre-wrap">{{ m.text }}</span>{% endif %}
+            {% if m.attachments %}<br><small><em>📎 {{ m.attachments }} attachment{{ m.attachments|pluralize }} (not shown)</em></small>{% endif %}
+        </div>
+    </div>
+{% empty %}
+    <p><small>No messages in memory for this chat.</small></p>
+{% endfor %}
+</div>

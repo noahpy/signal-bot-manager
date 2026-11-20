@@ -1,0 +1,41 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Messages — Signal Bot{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h2>Messages</h2>
+    <p>Read and send messages in the bot's chats.</p>
+</hgroup>
+<p><small>🔒 Messages are kept <strong>only in memory</strong>: the last 200 per chat from the past 24 hours.
+    They are never written to disk, logs or backups and disappear when the bot restarts.
+    Messages from before the last restart can't be shown.</small></p>
+{% if not running %}<article class="flash-error" style="padding:0.6rem 1rem">signal-cli is not running — nothing can be received or sent right now.</article>{% endif %}
+
+<input type="search" id="msg-search" placeholder="Filter chats..." oninput="filterRows()">
+<div class="overflow-auto">
+<table>
+    <thead><tr><th>Chat</th><th>Type</th><th>Recent messages</th><th>Last message</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+        <td><a href="{% url 'dashboard:message_chat' r.chat.pk %}">{{ r.chat.name|default:r.chat.identifier }}</a></td>
+        <td>{% if r.chat.chat_type == "group" %}<span class="badge badge-info">group</span>{% else %}<span class="badge badge-muted">contact</span>{% endif %}</td>
+        <td>{{ r.count|default:"—" }}</td>
+        <td>{% if r.last %}{{ r.last|date:"d.m. H:i" }}{% else %}—{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">No chats yet — sync them on the Chats page.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+<script>
+function filterRows() {
+    var q = document.getElementById('msg-search').value.toLowerCase();
+    document.querySelectorAll('tbody tr').forEach(function (row) {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

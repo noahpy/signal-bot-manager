@@ -37,7 +37,15 @@ class SignalClient:
         from core import jsonrpc
         if not jsonrpc.is_running():
             raise SignalClientError("signal-cli jsonRpc process not running")
-        return jsonrpc.call(method, timeout=timeout, **params)
+        result = jsonrpc.call(method, timeout=timeout, **params)
+        if method == "send":
+            try:
+                from core import inbox
+                key = params.get("groupId") or (params.get("recipient") or [None])[0]
+                inbox.add_outgoing(key, params.get("message"), len(params.get("attachment") or []))
+            except Exception:
+                logger.exception("Could not buffer sent message")
+        return result
 
     def send(self, recipient, message, attachments=None, notify_self=False):
         params = {"recipient": [recipient], "message": message}

@@ -143,6 +143,22 @@ Specs are documented in `core/reminders.py` and executed by `scripts/reminder_ru
 for the dashboard), `SIGNAL_CLI_PATH`, `SIGNAL_CLI_DATA_DIR`, `REMINDER_API_TOKEN`,
 `REMINDER_DEFAULT_TZ` (default Europe/Berlin). Defaults keep the previous behaviour.
 `HTTPS` (default 0; 1 = running behind a TLS proxy: trust `X-Forwarded-Proto`, secure cookies).
+`MESSAGES_PAGE` (default = `DASHBOARD_REQUIRE_LOGIN`): the dashboard's Messages page.
+
+## Messages page and data retention
+
+*Messages* in the dashboard lists the bot's chats; each chat shows its recent messages and has a
+box to send a message as the bot. Messages are held **only in memory** (`core/inbox.py`): at most
+200 per chat, 24 hours, never written to the database, logs or backups, and gone after a restart.
+The page is only enabled when the dashboard requires a login (or `MESSAGES_PAGE=1`); otherwise
+nothing is buffered.
+
+Retention otherwise:
+- Logs never contain message text (only sender, group and length).
+- The daily cleanup (`core/cleanup.py`) deletes downloaded attachments/stickers after 24 h, clears
+  stored trigger messages after 24 h, deletes job runs (and their logs) after 30 days, and
+  vacuums the database.
+- signal-cli prunes its own resend log of sent messages.
 
 On signal-bot.schollheim.net the dashboard is served by nginx at
 `https://dashboard-signal-bot.schollheim.net` (intranet only) with the Schollheim wildcard

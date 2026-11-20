@@ -85,6 +85,11 @@ def listener_loop():
 def _handle_notification(msg):
     envelope = msg.get("params", {}).get("envelope", {})
     source = envelope.get("source")
+    try:
+        from core import inbox
+        inbox.add_envelope(envelope)  # in-memory only, for the dashboard's Messages page
+    except Exception:
+        logger.exception("Could not buffer message")
 
     text = None
     sender = None
@@ -114,7 +119,8 @@ def _handle_notification(msg):
     if not text:
         return
 
-    logger.info("Message: sender=%s group=%s text=%s", sender, group_id, text[:80])
+    # Never log message content: logs outlive the 24h message cleanup.
+    logger.info("Message: sender=%s group=%s length=%d", sender, group_id, len(text))
     if timestamp and time.time() - timestamp / 1000 > MAX_MESSAGE_AGE:
         return
     _match_triggers(text, sender, group_id, timestamp)
@@ -139,8 +145,8 @@ def _match_triggers(text, sender, group_id, timestamp=None):
                 continue
 
         logger.info(
-            "Message trigger %d matched for job '%s': %s",
-            trigger.id, trigger.job.name, text[:50],
+            "Message trigger %d matched for job '%s'",
+            trigger.id, trigger.job.name,
         )
         execute_job(
             trigger.job_id,

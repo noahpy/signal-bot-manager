@@ -179,7 +179,7 @@ def run(ctx):
     ctx.log.info("=== KKK Admin ===")
     message = ctx.trigger_context.get("message", "")
     sender = ctx.trigger_context.get("sender")
-    ctx.log.info("From %s: %s", sender, message[:100])
+    ctx.log.info("Command from %s (%d chars)", sender, len(message))
 
     sender_name = get_name(sender) if sender else ""
     msg_lower = message.lower().strip()

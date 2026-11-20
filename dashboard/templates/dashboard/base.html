@@ -26,6 +26,7 @@
         .actions { display: flex; gap: 0.5rem; align-items: center; }
         .actions form { margin: 0; }
         .actions button { margin: 0; padding: 0.3em 0.8em; }
+        .flash-error { border-left: 4px solid var(--pico-color-red-550); }
     </style>
 </head>
 <body>
@@ -37,6 +38,7 @@
             <li><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
             <li><a href="{% url 'dashboard:job_list' %}">Jobs</a></li>
             <li><a href="{% url 'dashboard:chat_list' %}">Chats</a></li>
+            {% if messages_page %}<li><a href="{% url 'dashboard:message_index' %}">Messages</a></li>{% endif %}
             <li><a href="{% url 'dashboard:link_account' %}">Account</a></li>
             {% if user.is_authenticated %}
             <li><form method="post" action="{% url 'logout' %}" style="margin:0">{% csrf_token %}<button type="submit" class="outline secondary" style="padding:0.2em 0.6em;margin:0">Logout</button></form></li>
@@ -44,6 +46,7 @@
         </ul>
     </nav>
     <main class="container">
+        {% for m in messages %}<article class="flash{% if m.level_tag == 'error' %} flash-error{% endif %}" style="padding:0.6rem 1rem;margin-bottom:1rem;">{{ m }}</article>{% endfor %}
         {% block content %}{% endblock %}
     </main>
 </body>

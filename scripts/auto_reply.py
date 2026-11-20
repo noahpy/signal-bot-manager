@@ -56,7 +56,7 @@ def run(ctx):
     ctx.log.info("=== Auto Reply ===")
     message = ctx.trigger_context.get("message", "")
     sender = ctx.trigger_context.get("sender")
-    ctx.log.info("Received from %s: %s", sender, message[:100])
+    ctx.log.info("Received from %s (%d chars)", sender, len(message))
 
     chat = ctx.target_chats[0]
     msg_lower = message.lower()
